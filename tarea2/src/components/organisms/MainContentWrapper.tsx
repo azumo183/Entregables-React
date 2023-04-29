@@ -83,7 +83,7 @@ export const MainContentWrapper = () => {
         //console.log(usuario);
         setSelectedUser(usuario);
         setStep(1);
-    }, [step]);
+    }, [setStep]);
 
     const selectUsuario = (usuario: IUser) => {
         //console.log(usuario);

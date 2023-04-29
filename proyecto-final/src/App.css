@@ -1,0 +1,223 @@
+.App {
+  text-align: center;
+}
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+table {
+  text-align: center;
+}
+
+table th {
+  width: 10%;
+}
+
+.pokeicon {
+  display: block;
+  width: 40px;
+  height: 30px;
+  margin: 0px auto;
+}
+
+.myTableHeader, .myTableBody {
+  text-align: center;
+  font-size: smaller;
+}
+
+.myTableHeader {
+  font-weight: bold;
+  border-bottom: #282c34 1px solid;
+  padding-bottom: 6px;
+}
+
+.myTableBody {
+  line-height: 38px;
+  text-decoration: none;
+  color: black;
+}
+
+.typeTag {
+  height: 14px !important;
+  width: 32px !important;
+  margin: 0px 1px;
+}
+
+div [class=container], header nav {
+  min-width: 1320px;
+}
+
+.sprite {
+  margin: 0px 6px;
+}
+
+.sm-card{
+  min-height: 120px !important;
+  margin-bottom: 1.5rem;
+}
+
+.sm-card div[class=card-body] {
+  text-align: center;
+  line-height: 38px;
+}
+
+h1 small {
+  color: lightslategray;
+}
+
+.smallText, small{
+  font-size: small;
+}
+
+.boldText {
+  font-weight: bold;
+}
+
+.noMargin {
+  margin: 0px;
+}
+
+.textAlignLeft {
+  text-align: left;
+}
+
+.textAlignCenter {
+  text-align: center;
+}
+
+.textAlignRight {
+  text-align: right;
+}
+
+.prevNext a:first-child {
+  border-right: 1px solid lightslategray;
+  margin-right: 20px;
+  padding-right: calc(var(--bs-navbar-nav-link-padding-x) + 20px) !important;
+  text-align: right !important;
+}
+
+.prevNext a:last-child {
+  border-right: none;
+  margin-right: 0px;
+  padding-right: var(--bs-navbar-nav-link-padding-x) !important;
+  text-align: left;
+}
+
+.lowLineHeight {
+  line-height: 18px;
+  margin-bottom: 10px;
+}
+
+.moveList {
+  text-align: center;
+}
+
+.moveList button:nth-child(odd), .moveList a:nth-child(odd) {
+  background-color:lavender !important;
+}
+
+div[class=accordion] {
+  margin-bottom: 1.25rem;
+}
+
+.accordion-header button {
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+}
+
+.loginForm * {
+  margin-bottom: 12px;
+}
+
+a.myTableBody{
+  cursor: pointer;
+}
+
+button.link {
+  width: 100%;
+  border: none;
+  background-color: transparent;
+  padding: 1px 0px;
+  border-radius: 0px;
+}
+
+.moveList .typeTag {
+  position: relative;
+  bottom:1px;
+}
+
+.moveList button.link {
+  margin-bottom: 4px;
+}
+
+.partyPokemonMoves div[class='col-6']:nth-child(1), .partyPokemonMoves div[class='col-6']:nth-child(4) {
+  background-color: lavender;
+  border-radius: 4px;
+}
+
+.partyPokemonMoves span {
+  margin: 0px 10px;
+}
+
+.battleListOpts {
+  float: right;
+}
+
+.battleListOpts button {
+  margin-left: 6px;
+}
+
+svg {
+  position: relative;
+  bottom: 1px;
+}
+
+.mySwitch .form-check-input:checked {
+  background-color: #198754;
+  border-color: #157347;
+}
+
+.progress-bar.bg-warning {
+  color:#282c34;
+}
+
+.battleMove {
+  min-width: 160px;
+  margin: 0px 2px;
+}
+
+.battleMove p {
+  margin: 0px;
+}
