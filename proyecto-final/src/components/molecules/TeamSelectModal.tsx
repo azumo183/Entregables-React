@@ -13,9 +13,9 @@ interface ITeamSelectModalProps {
 }
 
 export const TeamSelectModal: React.FC<ITeamSelectModalProps> = ({battle, showModal, setShowModal, handleTeamConfirm}) => {
-    let selectedTeam: IParty | undefined = undefined;
+    const selectedTeam = React.useRef<IParty | undefined>(undefined);
     const handleTeamSelect = (team: IParty | undefined) => {
-        selectedTeam = team;
+        selectedTeam.current = team;
     };
 
     return (
@@ -54,7 +54,7 @@ export const TeamSelectModal: React.FC<ITeamSelectModalProps> = ({battle, showMo
                         </Card>
 
                         <div style={{display: 'block', textAlign: 'right'}}>
-                            <Button style={{width: '120px', margin:'0px 4px'}} onClick={() => handleTeamConfirm(selectedTeam, battle)}>Confirm</Button>
+                            <Button style={{width: '120px', margin:'0px 4px'}} onClick={() => handleTeamConfirm(selectedTeam.current, battle)}>Confirm</Button>
                             <Button variant='outline-secondary' style={{width: '120px', margin:'0px 4px'}} onClick={() => setShowModal(false)}>Back</Button>
                         </div>
                     </>

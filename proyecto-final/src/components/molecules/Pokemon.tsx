@@ -1,7 +1,6 @@
 import React from 'react'
 import { IPokemon } from '../../models/IPokemon'
 import { capFirst, formatedStat } from '../../util';
-import CSS from 'csstype';
 import Row from 'react-bootstrap/esm/Row';
 import Col from 'react-bootstrap/esm/Col';
 import Card from 'react-bootstrap/Card';
@@ -69,28 +68,31 @@ export const Pokemon: React.FC<IPokemonProps> = ({pokemon, variant}) => {
     )
 
     if(variant && variant === 'party' && pokemon.partyPokemon) return (
-        <Card className='sm-card'>
+        <Card className='sm-card' style={{marginBottom: '10px'}}>
             <Card.Header>
                 <Row>
-                    <Col xs={1}><PokemonIcon pokemonId={pokemon.id}/></Col>
-                    <Col xs={10}>
-                        <FloatingLabel label='Pokémon Name or Nickname' style={{marginBottom: '8px'} as CSS.Properties}>
-                            <Form.Control type="text" value={nickname} onKeyDown={handleKeyDown} onBlur={e => handleNicknameChange(pokemon, e.currentTarget.value)} onChange={handleChange}/>
-                        </FloatingLabel>
+                    <Col xs={2} className='textAlignCenter'>
+                        <PokemonIcon pokemonId={pokemon.id} style={{position: 'relative', top: '6px'}}/>
+                        <br/>
                         <TypeTag typeName={pokemon.types[0].type.name}/>
                         <TypeTag typeName={pokemon.types[1]? pokemon.types[1].type.name: undefined}/>
                     </Col>
-                    <Col xs={1}><Button variant='link' style={{color: 'crimson', position: 'relative', right: '10px'} as CSS.Properties} onClick={handlePokemonDelete}><Trash3/></Button></Col>
+                    <Col xs={8}>
+                        <FloatingLabel label='Pokémon Name or Nickname' style={{marginTop: '1px'}}>
+                            <Form.Control type="text" value={nickname} onKeyDown={handleKeyDown} onBlur={e => handleNicknameChange(pokemon, e.currentTarget.value)} onChange={handleChange}/>
+                        </FloatingLabel>
+                    </Col>
+                    <Col xs={2} className='textAlignCenter'><Button size='lg' variant='link' style={{color: 'white', position: 'relative', top: '4px'}} onClick={handlePokemonDelete}><Trash3/></Button></Col>
                 </Row>
             </Card.Header>
             <Card.Body className='textAlignLeft'>
                 <Row>
                     <Col>
-                        {pokemon.partyPokemon.selectedMoves.length < 4 ? <Button size='sm' style={{float: 'right'} as CSS.Properties} onClick={handleAddMove}>Add Move</Button> : <></>}
+                        {pokemon.partyPokemon.selectedMoves.length < 4 ? <Button size='sm' style={{float: 'right'}} onClick={handleAddMove}>Add Move</Button> : <></>}
                         <p className='smallText boldText'>{`Moves: ( ${pokemon.partyPokemon.selectedMoves.length}/4 )`}</p>
                     </Col>
                 </Row>
-                <Row style={{padding: '0px 12px'} as CSS.Properties}>
+                <Row style={{padding: '0px 12px'}}>
                     <Col>
                         <Moves pokemon={pokemon} variant='party'/>
                     </Col>

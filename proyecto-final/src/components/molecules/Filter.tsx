@@ -8,12 +8,12 @@ interface IFilterProps {
     select2?: IFilterSelect;
 
     variant?: string;
+    reset?: number;
 }
 
 interface IFilterInput {
     label: string;
-    handleEnter: (e: React.KeyboardEvent<HTMLInputElement>) => void;
-    handleBlur: (e: React.FocusEvent<HTMLInputElement, Element>) => void;
+    handleUpdate: (value: string) => void;
 }
 
 interface IFilterSelect {
@@ -22,7 +22,16 @@ interface IFilterSelect {
     handle: (e: React.ChangeEvent<HTMLSelectElement>, slot: number) => void;
 }
 
-export const Filter: React.FC<IFilterProps> = ({input, select1, select2, variant}) => {
+export const Filter: React.FC<IFilterProps> = ({input, select1, select2, variant, reset}) => {
+    const [textFilter, setTextFilter] = React.useState('');
+
+    React.useEffect(() => {
+        if(reset === 2){
+            setTextFilter('');
+            input.handleUpdate('');
+        }
+    }, [reset]);
+
     return (
         <Accordion>
             <Accordion.Item eventKey="0">
@@ -31,7 +40,7 @@ export const Filter: React.FC<IFilterProps> = ({input, select1, select2, variant
                     <Row>
                         <Col sm={variant && variant === 'text-only' ? 12 : 6}>
                             <FloatingLabel label={input.label}>
-                                <Form.Control type="text" onKeyDown={input.handleEnter} onBlur={input.handleBlur}/>
+                                <Form.Control type="text" onKeyDown={e => (e.key === "Enter") ? input.handleUpdate(e.currentTarget.value) : {}} onBlur={e => input.handleUpdate(e.currentTarget.value)} value={textFilter} onChange={e => setTextFilter(e.currentTarget.value)}/>
                             </FloatingLabel>
                         </Col>
                         {variant && variant === 'text-only' ? <></>: (

@@ -1,20 +1,26 @@
 import React from 'react'
 import { IAction, IBattle, IPlayer } from '../../models/IBattle'
 import { useParams } from 'react-router-dom';
-import { getBattle, getBattleActions, updateBattle } from '../../services/firebase';
+import { getBattleLive, updateBattle } from '../../services/firebase-battles';
 import { useFirebaseAuth } from '../../contexts/FirebaseAuthContext';
-import { Button, Card, Col, ProgressBar, Row } from 'react-bootstrap';
+import { Button, Card, Col, Row } from 'react-bootstrap';
 import { IPartyPokemon, ISelectedMove } from '../../models/IParty';
 import { usePokedexContext } from '../../contexts/PokedexContext';
 import pokeball from '../../resources/Poké_Ball_icon.svg.png'
-import { formatedMove, status } from '../../util';
-import axios from 'axios';
+import { callApi, formatedMove, status } from '../../util';
 import { IMove } from '../../models/IMove';
 import { TypeTag } from '../atoms/TypeTag';
+import { useFirebaseUsersContext } from '../../contexts/FirebaseUsersContext';
+import { LifeBar } from '../atoms/LifeBar';
+import { PokemonIcon } from '../atoms/PokemonIcon';
+import { SpinnerCustom } from '../atoms/SpinnerCustom';
 
 export const Battle = () => {
     //const [battle, setBattle] = React.useState<IBattle>();
     const battle = React.useRef<IBattle>();
+    
+    const [actions, setActions] = React.useState<IAction[]>([]);
+    const actionsToExec = React.useRef<IAction[]>([]);
 
     const [loading, setLoading] = React.useState(true);
     const [updatingDB, setUpdatingDB] = React.useState(true);
@@ -37,30 +43,27 @@ export const Battle = () => {
     
     const { battleId } = useParams();
     const { authUser } = useFirebaseAuth();
-    const { pokedex } = usePokedexContext();
+    const { pokedex, getBaseStat } = usePokedexContext();
+    const { users } = useFirebaseUsersContext();
 
     const loadBattle = React.useCallback(async () => {
         if(!authUser || !battleId) return;
         console.log(`Battle: loading battle ...`)
-        //(await getBattle(authUser, battleId));
-        battle.current = await getBattle(authUser, battleId);
-        setLoading(false);
+        //battle.current = await getBattle(authUser, battleId);
+        await getBattleLive(battleId, battle, setLoading, setActions);
     }, [authUser, battleId]);
 
     const loadMoves = React.useCallback(async (pokemon: IPartyPokemon) => {
         console.log(`Battle: loading ${pokemon.nickname} moves ...`)
         setLoadingMoves(true);
-        const calls: any[] = [];
-        pokemon.selectedMoves.forEach(move => calls.push(axios.get(`https://pokeapi.co/api/v2/move/${move.moveId}`)));
-        const fullMoveData = await Promise.all(calls);
-        
+        const response = await callApi(pokemon.selectedMoves.map(move => `https://pokeapi.co/api/v2/move/${move.moveId}`));
         const moves: IMove[] = [];
-        fullMoveData.forEach(element => moves.push(element.data as IMove));
+        response.forEach(element => moves.push(element.data as IMove));
         setSelectedPokemonMoves(moves);
         setLoadingMoves(false);
     }, []);
 
-    const updateWholeDB = async () => {
+    const updateDB = async () => {
         if(rol.current === 'host' && battle.current && authUser) {
             console.log(`Battle: updating db ...`);
             const tempP1 = battle.current.player1 as IPlayer;
@@ -79,113 +82,92 @@ export const Battle = () => {
         getActions();
     };
 
-    const getActions = async () => {
-        if(!battle.current) return;
-
-        let actions = await getBattleActions(battle.current);
-
-        if(actions.length < 2){
-            console.log(`not there yet`)
-            setTimeout(getActions, 3000);
+    const getActions = () => {
+        if(actionsToExec.current.length < 2){
+            console.log(`waiting for player actions ...`)
+            setTimeout(getActions, 2000);
             return;
         }
-
-        //sort by speed
-        let p2First = false;
-        if(actions[0].speed === actions[1].speed && Math.floor(Math.random() * 2) === 1) p2First = true;
-        if(p2First || actions[0].speed < actions[1].speed) actions = [actions[1], actions[0]];
-
-        execActions(actions, 0);
+        execActions(actionsToExec.current, 0);
     };
 
-    const getNoActions = async () => {
-        if(!battle.current) return;
-
-        let actions = await getBattleActions(battle.current);
-
-        if(actions.length > 1){
-            console.log(`not there yet`)
-            setTimeout(getNoActions, 3000);
+    const waitActionsReset = () => {
+        if(rol.current === 'p2' && actionsToExec.current.length === 2){
+            console.log(`waiting for player actions ...`)
+            setTimeout(waitActionsReset, 2000);
             return;
         }
-
-        if(battle.current?.status !== 3) setFrontPlayerStatus(0);
+        if(battle.current?.status !== 3) setFrontPlayerStatus(0); // if battle is not over continue to next turn
         else setUpdatingDB(false);
     };
 
     const execActions = async (actions: IAction[], index: number) => {
+
+        if(!battle.current) return;
+
+        const frontPlayer = (battle.current?.player2 as IPlayer).party?.owner === authUser?.uid ? (battle.current?.player2 as IPlayer) : battle.current?.player1;
+        const backPlayer = frontPlayer === battle.current?.player1 ? (battle.current?.player2 as IPlayer) : battle.current?.player1;
+        if(!frontPlayer || !backPlayer) return;
+
+        const frontPlayerSelectedPokemon = frontPlayer.party?.pokemon[frontPlayer.selectedPokemon];
+        const backPlayerSelectedPokemon = backPlayer.party?.pokemon[backPlayer.selectedPokemon];
+        if(!frontPlayer.party || !frontPlayerSelectedPokemon || !backPlayer.party || !backPlayerSelectedPokemon) return;
+
         //attack
         if(actions[index].type === 0){
-            const message = `${ frontPlayer?.party?.owner === actions[index].owner ? frontPlayerSelectedPokemon?.nickname : `Opponent's ${backPlayerSelectedPokemon?.nickname}` } used ${ formatedMove(actions[index].data?.moveName as string) }`;
+            const message = `${ frontPlayer.party?.owner === actions[index].owner ? frontPlayerSelectedPokemon.nickname : `Opponent's ${backPlayerSelectedPokemon.nickname}` } used ${ formatedMove(actions[index].data?.moveName as string) }`;
             setStatusOverride(message);
-
-            let hp;
+            console.log(message);
 
             if(frontPlayer?.party?.owner === actions[index].owner) {
-                if(!backPlayerSelectedPokemon) return;
-                hp = backPlayerSelectedPokemon?.currentHP - Math.floor((actions[index].data?.movePower as number)/2);
-                if(hp < 0) hp = 0;
-                setBackPlayerSelectedPokemon({...backPlayerSelectedPokemon, currentHP: (hp)});                
-                if(hp === 0) actions[index+1] = {type: 3, option: 0, speed: 0, owner: (backPlayer?.party?.owner as string)};
-                
-                // const ppUpdate = frontPlayerSelectedPokemonMoves;
-                // ppUpdate[actions[index].option].currentPP = ppUpdate[actions[index].option].currentPP - 1;
-                // setFrontPlayerSelectedPokemonMoves(ppUpdate);
+                frontPlayerSelectedPokemon.selectedMoves[actions[index].option].currentPP--;
+                backPlayerSelectedPokemon.currentHP -= Math.floor((actions[index].data?.movePower as number)/2);
+                if(backPlayerSelectedPokemon.currentHP <= 0){
+                    backPlayerSelectedPokemon.currentHP = 0;
+                    actions[index+1] = {type: 3, option: 0, speed: 0, owner: (backPlayer?.party?.owner as string)};
+                }
+                setBackPlayer(backPlayer);
+                setFrontPlayer(frontPlayer);
                 
             } else {
-                if(!frontPlayerSelectedPokemonHP) return;
-                hp = frontPlayerSelectedPokemonHP - Math.floor((actions[index].data?.movePower as number)/2);
-                if(hp < 0) hp = 0;
-                setFrontPlayerSelectedPokemonHP(hp);
-                if(hp === 0) actions[index+1] = {type: 3, option: 0, speed: 0, owner: (frontPlayer?.party?.owner as string)};
-            }
-
-            const tempP1 = battle.current?.player1 as IPlayer;
-            const tempP2 = battle.current?.player2 as IPlayer;
-            if(tempP1.party && tempP2.party)
-                if(actions[index].owner === tempP1.party.owner){
-                    tempP2.party.pokemon[tempP2.selectedPokemon].currentHP = hp;
-                    tempP1.party.pokemon[tempP1.selectedPokemon].selectedMoves[actions[index].option].currentPP--;
-                }else{
-                    tempP1.party.pokemon[tempP1.selectedPokemon].currentHP = hp;
-                    tempP2.party.pokemon[tempP2.selectedPokemon].selectedMoves[actions[index].option].currentPP--;
+                backPlayerSelectedPokemon.selectedMoves[actions[index].option].currentPP--;
+                frontPlayerSelectedPokemon.currentHP -= Math.floor((actions[index].data?.movePower as number)/2);
+                if(frontPlayerSelectedPokemon.currentHP <= 0) {
+                    frontPlayerSelectedPokemon.currentHP = 0;
+                    actions[index+1] = {type: 3, option: 0, speed: 0, owner: (frontPlayer?.party?.owner as string)};
                 }
-            //console.log(battle.current);
+                setFrontPlayer(frontPlayer);
+            }
         }
 
         //switch
         else if(actions[index].type === 1){
-            const message = `${actions[index].owner} switched for ${ frontPlayer?.party?.owner === actions[index].owner ? frontPlayer.party.pokemon[actions[index].option].nickname : backPlayer?.party?.pokemon[actions[index].option].nickname}`;
+            const message = `${users.find(user => user.id === actions[index].owner)?.data.displayName} switched for ${ frontPlayer.party?.owner === actions[index].owner ? frontPlayer.party.pokemon[actions[index].option].nickname : backPlayer.party?.pokemon[actions[index].option].nickname}`;
             setStatusOverride(message);
+            console.log(message);
 
-            if(frontPlayer?.party?.owner === actions[index].owner) {
-                setFrontPlayerSelectedPokemon(frontPlayer.party.pokemon[actions[index].option]);
+            if(frontPlayer.party?.owner === actions[index].owner) {
+                frontPlayer.selectedPokemon = actions[index].option;
+                setFrontPlayerSelectedPokemon(frontPlayer.party.pokemon[frontPlayer.selectedPokemon]);
             }else{
-                setBackPlayerSelectedPokemon(backPlayer?.party?.pokemon[actions[index].option]);
+                backPlayer.selectedPokemon = actions[index].option;
+                setBackPlayerSelectedPokemon(backPlayer.party.pokemon[backPlayer.selectedPokemon]);
             }
-
-            const tempP1 = battle.current?.player1 as IPlayer;
-            const tempP2 = battle.current?.player2 as IPlayer;
-            if(tempP1.party && tempP2.party)
-                if(actions[index].owner === tempP1.party.owner){
-                    tempP1.selectedPokemon = actions[index].option;
-                }else{
-                    tempP2.selectedPokemon = actions[index].option;
-                }
-            //console.log(battle.current);
         }
 
         //faint
         else if(actions[index].type === 3){
             const message = `${ frontPlayer?.party?.owner === actions[index].owner ? frontPlayerSelectedPokemon?.nickname : `Opponent's ${backPlayerSelectedPokemon?.nickname}` } fainted`;
             setStatusOverride(message);
+            console.log(message);
 
             if(frontPlayer?.party?.owner === actions[index].owner) {
+                setFrontPlayer(frontPlayer);
                 const nextPokemon = frontPlayer.party.pokemon.find(pokemon => pokemon.currentHP > 0);
                 if(nextPokemon) actions[index+1] = {type: 1, option: frontPlayer.party.pokemon.indexOf(nextPokemon), speed: 0, owner: (frontPlayer.party.owner as string)};
                 else actions[index+1] = {type: 4, option: 0, speed: 0, owner: (frontPlayer.party.owner as string)};
             }else{
-                if(!backPlayer || !backPlayer.party) return;
+                setBackPlayer(backPlayer);
                 const nextPokemon = backPlayer.party.pokemon.find(pokemon => pokemon.currentHP > 0);
                 if(nextPokemon) actions[index+1] = {type: 1, option: backPlayer.party.pokemon.indexOf(nextPokemon), speed: 0, owner: (backPlayer.party.owner as string)};
                 else actions[index+1] = {type: 4, option: 0, speed: 0, owner: (backPlayer.party.owner as string)};
@@ -195,37 +177,30 @@ export const Battle = () => {
         //gave up || out of pokemon || timed out (not programmed yet)
         else if(actions[index].type === 2 || actions[index].type === 4){
             const message = actions[index].type === 2 ?
-                `${actions[index].owner} gave up ... ${ frontPlayer?.party?.owner === actions[index].owner ? backPlayer?.party?.owner : frontPlayer?.party?.owner } wins the battle!!`:
-                `${actions[index].owner} is out of Pokémon. ${ frontPlayer?.party?.owner === actions[index].owner ? backPlayer?.party?.owner : frontPlayer?.party?.owner } wins the battle!!`;
+                `${users.find(user => user.id === actions[index].owner)?.data.displayName} gave up ... ${ users.find(user => user.id === (frontPlayer.party?.owner === actions[index].owner ? backPlayer.party?.owner : frontPlayer.party?.owner))?.data.displayName } wins the battle!!`:
+                `${users.find(user => user.id === actions[index].owner)?.data.displayName} is out of Pokémon. ${ users.find(user => user.id === (frontPlayer.party?.owner === actions[index].owner ? backPlayer.party?.owner : frontPlayer.party?.owner))?.data.displayName } wins the battle!!`;
             setStatusOverride(message);
+            console.log(message);
 
-            if(battle.current) battle.current.status = 3;
-            const tempP1 = battle.current?.player1 as IPlayer;
-            const tempP2 = battle.current?.player2 as IPlayer;
-            if(tempP1.party && tempP2.party)
-                if(actions[index].owner === tempP1.party.owner){
-                    tempP1.status = actions[index].type === 2 ? 3 : (actions[index].type === 4 ? 1 : 5);
-                    tempP2.status = actions[index].type === 2 ? 2 : (actions[index].type === 4 ? 0 : 4);
-                }else{
-                    tempP2.status = actions[index].type === 2 ? 3 : (actions[index].type === 4 ? 1 : 5);
-                    tempP1.status = actions[index].type === 2 ? 2 : (actions[index].type === 4 ? 0 : 4);
-                }
-            //console.log(battle.current);
+            battle.current.status = 3;
+            if(actions[index].owner === frontPlayer.party.owner){
+                frontPlayer.status = actions[index].type === 2 ? 3 : (actions[index].type === 4 ? 1 : 5);
+                backPlayer.status = actions[index].type === 2 ? 2 : (actions[index].type === 4 ? 0 : 4);
+            }else{
+                frontPlayer.status = actions[index].type === 2 ? 3 : (actions[index].type === 4 ? 1 : 5);
+                backPlayer.status = actions[index].type === 2 ? 2 : (actions[index].type === 4 ? 0 : 4);
+            }
 
             actions[index+1] = {type: 5, option: 0, speed: 0, owner: (actions[index].owner)};
         }
 
+        //console.log(battle.current);
+
         if(index+1 < actions.length && actions[index].type !== 5) setTimeout(() => execActions(actions, index+1), 3000);
         else {
-            if(battle.current?.status !== 3) setFrontPlayerStatus(2);
-            if(rol.current === 'host'){
-                await updateWholeDB();
-                if(battle.current?.status !== 3) setFrontPlayerStatus(0);
-                else setUpdatingDB(false);
-            }
-            else if(rol.current === 'p2'){
-                getNoActions();
-            }
+            if(battle.current.status !== 3) setFrontPlayerStatus(2);
+            if(rol.current === 'host') await updateDB();
+            waitActionsReset();
         }
     };
 
@@ -234,8 +209,18 @@ export const Battle = () => {
     }, [loadBattle]);
 
     React.useEffect(() => {
-        if(!authUser) return;
-        if(loading === false && battle.current) {
+        if(actions.filter(action => action).length === 2){
+            const p2First = false; //Math.floor(Math.random() * 2) === 1;
+            actionsToExec.current = actions[1].speed > actions[0].speed || (actions[0].speed === actions[1].speed && p2First)?
+                [actions[1], actions[0]]: [...actions];
+            console.log(`Battle: actionsToExec set to ${actionsToExec}`);
+        }
+        else actionsToExec.current = [];
+    }, [actions]);
+
+    React.useEffect(() => {
+        if(!authUser || !battle.current) return;
+        if(!loading) {
             console.log(`Battle: defining sides ...`);
             if(battle.current.player1.party?.owner === authUser.uid) rol.current = 'host';
 
@@ -278,27 +263,28 @@ export const Battle = () => {
         }
     }, [frontPlayerSelectedPokemon, loadMoves]);
 
-    if(loading) return <p>Loading ...</p>
+    if(loading) return <SpinnerCustom/>
     
     if(!battle.current || !backPlayer || !backPlayerSelectedPokemon || !frontPlayer || frontPlayerStatus === undefined || !frontPlayerSelectedPokemon || frontPlayerSelectedPokemonHP === undefined) {
-        const log = `battle.current: ${battle.current}\nbackPlayer: ${backPlayer}\nbackPlayerSelectedPokemon: ${backPlayerSelectedPokemon}\nfrontPlayer: ${frontPlayer}\nfrontPlayerStatus: ${frontPlayerStatus}\nfrontPlayerSelectedPokemon: ${frontPlayerSelectedPokemon}\n frontPlayerSelectedPokemonHP: ${frontPlayerSelectedPokemonHP}`;
-        return <p>{`Wooops! Something went wrong ...\n\n${log}`}</p>
+        return (
+            <>
+                <p>Wooops! Something went wrong ...</p>
+                <ul>
+                    <li>{`battle.current: ${battle.current}`}</li>
+                    <li>{`backPlayer: ${backPlayer}`}</li>
+                    <li>{`backPlayerSelectedPokemon: ${backPlayerSelectedPokemon}`}</li>
+                    <li>{`frontPlayer: ${frontPlayer}`}</li>
+                    <li>{`frontPlayerStatus: ${frontPlayerStatus}`}</li>
+                    <li>{`frontPlayerSelectedPokemon: ${frontPlayerSelectedPokemon}`}</li>
+                    <li>{`frontPlayerSelectedPokemonHP: ${frontPlayerSelectedPokemonHP}`}</li>
+                </ul>
+            </>
+        )
     }
 
     const sprites = {
         front: pokedex[backPlayerSelectedPokemon.pokemonId-1].sprites.versions['generation-v']['black-white'].animated.front_default,
         back: pokedex[frontPlayerSelectedPokemon.pokemonId-1].sprites.versions['generation-v']['black-white'].animated.back_default,
-    };
-
-    const calcHP = (pokemonId: number, pokemonCurrentHP: number) => {
-        let totalHP = pokedex[pokemonId-1].stats.find((stat) => stat.stat.name === 'hp')?.base_stat;
-        if(!totalHP) totalHP = pokemonCurrentHP;
-        return Math.floor(pokemonCurrentHP * 100 / totalHP);
-    };
-
-    const getSpeed = (pokemon: IPartyPokemon) => {
-        let speed = pokedex[pokemon.pokemonId-1].stats.find((stat) => stat.stat.name === 'speed')?.base_stat;
-        return speed ? speed : 0;
     };
 
     return (
@@ -313,17 +299,14 @@ export const Battle = () => {
                     <Card>
                         <Card.Header>
                             <div style={{float: 'right'}}>
-                                {backPlayer.party?.pokemon.map((pokemon, index) => {
-                                    if(pokemon.currentHP > 0) return <img key={index} src={pokeball} alt='Pokéball' style={{height: '16px'}}/>
-                                    else return <img key={index} src={pokeball} alt='Pokéball' style={{height: '16px', filter: 'grayscale(1)'}}/>
-                                })}
+                                {backPlayer.party?.pokemon.map((pokemon, index) => <img key={index} src={pokeball} alt='Pokéball' style={{height: '16px', filter: `grayscale(${pokemon.currentHP > 0? 0: 1})`}}/>)}
                             </div>
-                            <small>{backPlayer.party?.owner} 's</small>
+                            <small>{`${users.find(user => user.id === backPlayer.party?.owner)?.data.displayName}'s`}</small>
                             <br/>
                             {backPlayerSelectedPokemon.nickname} <small>#{backPlayerSelectedPokemon.pokemonId}</small>
                         </Card.Header>
                         <Card.Body>
-                            <ProgressBar now={calcHP(backPlayerSelectedPokemon.pokemonId, backPlayerSelectedPokemon.currentHP)} label={`${calcHP(backPlayerSelectedPokemon.pokemonId, backPlayerSelectedPokemon.currentHP)}%`} variant={calcHP(backPlayerSelectedPokemon.pokemonId, backPlayerSelectedPokemon.currentHP) < 20 ? 'danger' : (calcHP(backPlayerSelectedPokemon.pokemonId, backPlayerSelectedPokemon.currentHP) < 50 ? 'warning' : 'success')} />
+                            <LifeBar pokemon={backPlayerSelectedPokemon}/>
                         </Card.Body>
                     </Card>
                 </Col>
@@ -333,17 +316,14 @@ export const Battle = () => {
                     <Card>
                         <Card.Header>
                             <div style={{float: 'right'}}>
-                                {frontPlayer.party?.pokemon.map((pokemon, index) => {
-                                    if(pokemon.currentHP > 0) return <img key={index} src={pokeball} alt='Pokéball' style={{height: '16px'}}/>
-                                    else return <img key={index} src={pokeball} alt='Pokéball' style={{height: '16px', filter: 'grayscale(1)'}}/>
-                                })}
+                                {frontPlayer.party?.pokemon.map((pokemon, index) => <img key={index} src={pokeball} alt='Pokéball' style={{height: '16px', filter: `grayscale(${pokemon.currentHP > 0? 0: 1})`}}/>)}
                             </div>
-                            <small>{frontPlayer.party?.owner} 's</small>
+                            <small>{`${users.find(user => user.id === frontPlayer.party?.owner)?.data.displayName}'s`}</small>
                             <br/>
                             {frontPlayerSelectedPokemon.nickname} <small>#{frontPlayerSelectedPokemon.pokemonId}</small>
                         </Card.Header>
                         <Card.Body>
-                            <ProgressBar now={calcHP(frontPlayerSelectedPokemon.pokemonId, frontPlayerSelectedPokemonHP)} label={`${calcHP(frontPlayerSelectedPokemon.pokemonId, frontPlayerSelectedPokemonHP)}%`} variant={calcHP(frontPlayerSelectedPokemon.pokemonId, frontPlayerSelectedPokemonHP) < 20 ? 'danger' : (calcHP(frontPlayerSelectedPokemon.pokemonId, frontPlayerSelectedPokemonHP) < 50 ? 'warning' : 'success')} />
+                            <LifeBar pokemon={frontPlayerSelectedPokemon}/>
                         </Card.Body>
                     </Card>
                 </Col>
@@ -351,9 +331,9 @@ export const Battle = () => {
                     <img className='sprite' src={sprites.back? sprites.back: ""} alt={`${frontPlayerSelectedPokemon.nickname}'s front`} />
                 </Col>
             </Row>
-            <hr/>
-            <p className='noMargin smallText'>{`Status: ${statusOverride}`}</p>
-            <hr/>
+            <Row style={{backgroundColor: 'lavender', padding: '20px 0px', margin: '16px 0px 24px 0px', borderRadius: '6px'}}>
+                <Col><p className='noMargin smallText'>{`Status: ${statusOverride}`}</p></Col>
+            </Row>
             <Row>
                 <Col className='textAlignCenter'>
                     {battle.current.status <= 2?
@@ -361,14 +341,23 @@ export const Battle = () => {
                             <p>{`What will ${frontPlayerSelectedPokemon.nickname} do?`}</p>
                             {loadingMoves ? <p>Loading</p>:
                             frontPlayerSelectedPokemonMoves.map((move, index) => (
-                                <Button key={move.moveId} className='battleMove' size='sm' disabled={frontPlayerStatus !== 0 || move.currentPP < 1} variant='outline-success' onClick={() => handlePerformAction(0, index, getSpeed(frontPlayerSelectedPokemon), { moveName: selectedPokemonMoves[index].name, movePower: selectedPokemonMoves[index].power })}>
+                                <Button key={move.moveId} className='battleMove' size='sm' disabled={frontPlayerStatus !== 0 || move.currentPP < 1} variant='outline-dark' onClick={() => handlePerformAction(0, index, getBaseStat(frontPlayerSelectedPokemon.pokemonId, 'speed'), { moveName: selectedPokemonMoves[index].name, movePower: selectedPokemonMoves[index].power })} style={{padding: '11px 8px'}}>
                                     <p>{formatedMove(selectedPokemonMoves[index].name)} <TypeTag typeName={selectedPokemonMoves[index].type.name}/></p>
                                     <p>{`PP: ${move.currentPP}`}</p>
                                 </Button>
                             ))}
-                            <p style={{marginTop: '16px'}}>~ OR ~</p>
-                            <Button className='battleMove' size='sm' variant='outline-dark' disabled={frontPlayerStatus !== 0} onClick={() => handlePerformAction(1, 1, 1000)}>Switch Pokémon</Button>
-                            <Button className='battleMove' size='sm' variant='outline-danger' disabled={frontPlayerStatus !== 0} onClick={() => handlePerformAction(2, 1, 1001)}>Give Up</Button>
+
+                            <p style={{marginTop: '16px'}}>Or you can switch to:</p>
+                            {frontPlayer.party?.pokemon.map((pokemon, index) =>
+                                <Button key={index} className='battleMove' size='sm' variant='outline-dark' disabled={frontPlayerStatus !== 0 || pokemon.currentHP === 0 || pokemon === frontPlayerSelectedPokemon} onClick={() => handlePerformAction(1, index, 1000)} style={pokemon === frontPlayerSelectedPokemon? {boxShadow: '0 0 0 0.25rem #20b2ab80'}: {}}>
+                                    <p><PokemonIcon pokemonId={pokemon.pokemonId} style={{filter: `grayscale(${pokemon.currentHP > 0? 0 : 1})`}}/><span style={{position: 'relative', bottom: '6px'}}>{pokemon.nickname}</span></p>
+                                    <LifeBar pokemon={pokemon} style={{margin: '2.5px 0px'}}/>
+                                </Button>
+                            )}
+
+                            <hr/>
+
+                            <Button className='battleMove' size='sm' variant='outline-danger' disabled={frontPlayerStatus !== 0} onClick={() => handlePerformAction(2, 1, 1001)} style={{float: 'right'}}>Give Up</Button>
                         </>:
                         <>
                             {updatingDB?

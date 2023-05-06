@@ -2,7 +2,7 @@ import React from "react";
 import { IParty, IPartyPokemon, ISelectedMove } from "../models/IParty";
 import { useFirebaseAuth } from "./FirebaseAuthContext";
 import { useNavigate, useParams } from "react-router-dom";
-import { getTeam, saveTeam } from "../services/firebase";
+import { getTeam, saveTeam } from "../services/firebase-teams";
 import { IPokemon } from "../models/IPokemon";
 import { capFirst, decode } from "../util";
 import { IMove } from "../models/IMove";

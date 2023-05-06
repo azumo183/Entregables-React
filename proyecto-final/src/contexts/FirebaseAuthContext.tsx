@@ -7,29 +7,38 @@ import {
     getAuth,
     createUserWithEmailAndPassword,
     signOut,
+    updatePassword,
+    sendPasswordResetEmail,
 } from "firebase/auth";
 
 export interface IFirebaseAuthContextProps {
     authUser: User | undefined;
     authToken: string | null;
-    login: (email: string, password: string) => Promise<void>;
-    signup: (email: string, password: string) => Promise<void>;
+    loadingAuthUser: boolean;
+    login: (email: string, password: string, checking?: boolean) => Promise<boolean>;
+    signup: (email: string, password: string) => Promise<boolean>;
     loginWithGoogle: () => Promise<void>;
     logout: () => Promise<void>;
+    resetPassword: (newPassword: string) => Promise<void>;
+    forgotPassword: (email: string) => Promise<void>;
 }
 
 const FirebaseAuthContext = React.createContext<IFirebaseAuthContextProps>({
     authUser: undefined,
     authToken: null,
-    login: async () => {},
-    signup: async () => {},
+    loadingAuthUser: true,
+    login: async () => false,
+    signup: async () => false,
     loginWithGoogle: async () => {},
     logout: async () => {},
+    resetPassword: async () => {},
+    forgotPassword: async () => {},
 });
 
 export const FirebaseAuthContextProvider: React.FC<React.PropsWithChildren> = ({children}) => {
     const [authUser, setAuthUser] = React.useState<User | undefined>(undefined);
     const [authToken, setAuthToken] = React.useState<string | null>(null);
+    const [loadingAuthUser, setLoadingAuthUser] = React.useState(true);
 
     const signup = async (email: string, password: string) => {
         try {
@@ -37,20 +46,25 @@ export const FirebaseAuthContextProvider: React.FC<React.PropsWithChildren> = ({
             setAuthUser(userCredential.user);
             const token = await userCredential.user.getIdToken();
             setAuthToken(token);
+            return true;
         } catch (error) {
             console.error(error);
         }
+        return false;
     };
 
-    const login = async (email: string, password: string) => {
+    const login = async (email: string, password: string, checking?: boolean) => {
         try {
             const userCredential = await signInWithEmailAndPassword(getAuth(), email, password);
+            if(checking) return true;
             setAuthUser(userCredential.user);
             const token = await userCredential.user.getIdToken();
             setAuthToken(token);
+            return true;
         } catch (error) {
             console.error(error);
         }
+        return false;
     };
 
     const loginWithGoogle = async () => {
@@ -74,7 +88,25 @@ export const FirebaseAuthContextProvider: React.FC<React.PropsWithChildren> = ({
         }
     };
 
+    const resetPassword = async (newPassword: string) => {
+        try {
+            const user = getAuth().currentUser;
+            if(user) await updatePassword(user, newPassword);
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const forgotPassword = async (email: string) => {
+        try {
+            await sendPasswordResetEmail(getAuth(), email);
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
     const authStateChanged = async (user: User | null) => {
+        //console.log(user);
         if (user) {
             setAuthUser(user);
             const token = await user.getIdToken();
@@ -82,10 +114,13 @@ export const FirebaseAuthContextProvider: React.FC<React.PropsWithChildren> = ({
         } else {
             setAuthUser(undefined);
             setAuthToken(null);
+            setLoadingAuthUser(false);
         }
     };
 
     React.useEffect(() => {
+        //console.log(getAuth());
+        if(getAuth().currentUser) setLoadingAuthUser(false);
         const unsubscribe = getAuth().onAuthStateChanged(authStateChanged);
         return () => unsubscribe();
     }, [authUser]);
@@ -93,10 +128,13 @@ export const FirebaseAuthContextProvider: React.FC<React.PropsWithChildren> = ({
     const contextValue: IFirebaseAuthContextProps = {
         authUser,
         authToken,
+        loadingAuthUser,
         login,
         signup,
         loginWithGoogle,
         logout,
+        resetPassword,
+        forgotPassword,
     };
 
     return (

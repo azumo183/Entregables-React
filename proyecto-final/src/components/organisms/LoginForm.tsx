@@ -4,7 +4,11 @@ import * as Yup from "yup";
 import { useFirebaseAuth } from "../../contexts/FirebaseAuthContext";
 import { useNavigate } from "react-router-dom";
 import { Button, Col, FloatingLabel, Form, Row } from "react-bootstrap";
-import CSS from 'csstype';
+import { SpinnerCustom } from "../atoms/SpinnerCustom";
+
+const REQUIRED_FIELD_MESSAGE = "This information is required.";
+const INVALID_EMAIL_MESSAGE = "This is not a valid email format.";
+const MIN_PASSWORD_LENGTH_MESSAGE = "This must be at least 8 characters long.";
 
 interface ILoginFormValues {
     email: string;
@@ -13,22 +17,27 @@ interface ILoginFormValues {
 
 const LoginSchema = Yup.object().shape({
     email: Yup.string()
-        .email("Correo inválido")
-        .required("Campo requerido")
+        .email(INVALID_EMAIL_MESSAGE)
+        .required(REQUIRED_FIELD_MESSAGE)
+        .matches(/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/, INVALID_EMAIL_MESSAGE),
         //.matches(/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/),
-        .matches(/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/),
     password: Yup.string()
-        .required("Campo requerido")
-        .min(8, "Mínimo 8 caracteres"),
+        .required(REQUIRED_FIELD_MESSAGE)
+        .min(8, MIN_PASSWORD_LENGTH_MESSAGE),
 });
 
 export const LoginForm = () => {
-    const { login } = useFirebaseAuth();
+    const { login, forgotPassword } = useFirebaseAuth();
     const navigate = useNavigate();
 
+    const handleForgotPassword = async (email: string) => {
+        await forgotPassword(email);
+        alert(`Email sent to ${email}.\nProbably to spam folder ...`);
+    };
+
     const onSubmit = async (values: ILoginFormValues) => {
-        await login(values.email, values.password);
-        navigate("/");
+        const correct = await login(values.email, values.password);
+        if(correct) navigate("/");
     };
 
     return (
@@ -67,41 +76,40 @@ export const LoginForm = () => {
                                 <Form.Control
                                     id="email"
                                     type="email"
-                                    //defaultValue={values.email}
                                     value={values.email}
                                     onChange={handleChange}
                                     onBlur={handleBlur}
-                                    /*error={touched.email && !!errors.email}
-                                    helperText={touched.email && errors.email}*/
+                                    isInvalid={touched.email && !!errors.email}
                                     required
                                 />
+                                <Form.Control.Feedback type="invalid">{errors.email}</Form.Control.Feedback>
                             </FloatingLabel>
 
                             <FloatingLabel label="Password">
                                 <Form.Control
                                     id="password"
                                     type="password"
-                                    //defaultValue={values.password}
                                     value={values.password}
                                     onChange={handleChange}
                                     onBlur={handleBlur}
-                                    /*error={touched.password && !!errors.password}
-                                    helperText={touched.password && errors.password}*/
+                                    isInvalid={touched.password && !!errors.password}
                                     required
                                 />
+                                <Form.Control.Feedback type="invalid">{errors.password}</Form.Control.Feedback>
                             </FloatingLabel>
 
-                            <p className="textAlignRight"><small><a href="#">Forgot password?</a></small></p>
+                            <p className="textAlignRight"><Button size="sm" variant="link" onClick={() => !errors.email ? handleForgotPassword(values.email) : alert('Please type a valid email')}>Forgot password?</Button></p>
 
                             <Button
-                                style={{width: '100%'} as CSS.Properties}
-                                /*loading={isSubmitting || isValidating}*/
+                                style={{width: '100%'}}
                                 type="submit"
                                 size="lg"
                                 disabled={!isValid || isValidating}
-                                variant={(!isValid || isValidating)? "secondary": "primary"}
                             >
-                                Log in
+                                {isSubmitting || isValidating?
+                                    <SpinnerCustom as="span" variant="light"/>:
+                                    'Log in'
+                                }
                             </Button>
 
                         </Form>

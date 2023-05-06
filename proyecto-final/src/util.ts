@@ -1,8 +1,9 @@
-import axios from "axios";
+import axios, { AxiosResponse } from "axios";
 import { IParty, IPartyPokemon, ISelectedMove } from "./models/IParty";
 import { User } from "firebase/auth";
 import { IPokemon } from "./models/IPokemon";
 import { IMove } from "./models/IMove";
+import { IBattle } from "./models/IBattle";
 
 export type FormControlElement = HTMLInputElement | HTMLTextAreaElement;
 
@@ -69,18 +70,38 @@ export const createRandomTeam = async (authUser: User, pokedex: IPokemon[]) => {
             selectedMoves: [],
         };
 
+        const randMoves: number[] = [];
         for(let i = 0; i < 4; i++) {
             const randMove = Math.floor(Math.random() * pokedex[rand].moves.length);
-            const moveData = (await axios.get(pokedex[rand].moves[randMove].move.url)).data as IMove;
-            const selectedMove: ISelectedMove = {
-                moveId: moveData.id,
-                currentPP: moveData.pp,
-            };
-            if(pokemon.selectedMoves.filter(move => move.moveId === selectedMove.moveId).length === 0) pokemon.selectedMoves.push(selectedMove);
+            if(randMoves.indexOf(randMove) < 0) randMoves.push(randMove);
         }
+
+        const response = await callApi(randMoves.map(randMove => pokedex[rand].moves[randMove].move.url));
+        const moves: IMove[] = [];
+        response.forEach(element => moves.push(element.data as IMove));
+
+        moves.forEach(move => {
+            const selectedMove: ISelectedMove = {
+                moveId: move.id,
+                currentPP: move.pp,
+            };
+            pokemon.selectedMoves.push(selectedMove);
+        });
 
         party.pokemon.push(pokemon);
     }
 
+    //console.log(party);
     return party;
 };
+
+export const callApi = async (urls: string[]) => {
+    const calls: Promise<AxiosResponse<any, any>>[] = [];
+    urls.forEach(url => calls.push(axios.get(url)));
+    return await Promise.all(calls);
+}
+
+export const sortByDate = (a: IBattle, b: IBattle) => {
+    if(a.date >= b.date) return 1;
+    else return -1;
+}

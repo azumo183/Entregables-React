@@ -75,7 +75,7 @@ table th {
   margin: 0px 1px;
 }
 
-div [class=container], header nav {
+div [class=container], header nav, footer {
   min-width: 1320px;
 }
 
@@ -157,8 +157,8 @@ div[class=accordion] {
   padding-bottom: 0.25rem;
 }
 
-.loginForm * {
-  margin-bottom: 12px;
+.loginForm input, .loginForm button {
+  margin-top: 12px;
 }
 
 a.myTableBody{
@@ -182,6 +182,15 @@ button.link {
   margin-bottom: 4px;
 }
 
+#partyPokemon div.col-6 {
+  position: relative;
+  right: 5px;
+}
+
+#partyPokemon div.col-6:nth-child(odd) {
+  right: -5px;
+}
+
 .partyPokemonMoves div[class='col-6']:nth-child(1), .partyPokemonMoves div[class='col-6']:nth-child(4) {
   background-color: lavender;
   border-radius: 4px;
@@ -197,6 +206,7 @@ button.link {
 
 .battleListOpts button {
   margin-left: 6px;
+  min-width: 110px;
 }
 
 svg {
@@ -205,8 +215,25 @@ svg {
 }
 
 .mySwitch .form-check-input:checked {
-  background-color: #198754;
-  border-color: #157347;
+  background-color: white !important;
+  border-color: white !important;
+}
+
+.mySwitch .form-check-input:focus {
+  border-color: white !important;
+  box-shadow: 0 0 0 0.25rem rgba(220, 249, 247, 0.25) !important;
+}
+
+.mySwitch .form-check-input {
+  background-image: url('data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%27-4 -4 8 8%27><circle r=%273%27 fill=%27lightgray%27/></svg>') !important;
+}
+
+.mySwitch .form-check-input:checked {
+  background-image: url('data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%27-4 -4 8 8%27><circle r=%273%27 fill=%27%2351E1D8%27/></svg>') !important;
+}
+
+.mySwitch label {
+  color: white !important;
 }
 
 .progress-bar.bg-warning {
@@ -215,9 +242,107 @@ svg {
 
 .battleMove {
   min-width: 160px;
-  margin: 0px 2px;
+  margin: 10px 4px 30px 4px;
 }
 
 .battleMove p {
   margin: 0px;
+}
+
+body {
+  background-image: url(https://i.pinimg.com/originals/ce/8f/73/ce8f73d98565e7947b95f1e226155280.jpg);
+}
+
+#mainContainer {
+  background-color:honeydew;
+  min-height: calc(100vh - 100px);
+  box-shadow: -20px 0px 50px #157a7580, 20px 0px 50px #157a7580;
+  /* color: var(--primary-active-border); */
+}
+
+.card-header{
+  background-color: var(--primary-bg) !important;
+  color: white !important;
+}
+
+.card-header label {
+  color: gray;
+}
+
+footer{
+  background-color: #212529;
+  color: white;
+  text-align: center;
+  padding: 10px 0px;
+}
+
+:root {
+  --accordion-bg: #dcf9f7;
+
+  --primary-bg: lightseagreen;
+  --primary-hover: #1c9c96;
+  --primary-active: #188b85;
+  --primary-active-border: #157A75;
+
+  --success-bg: #8787E8;
+  --success-hover: #7676E5;
+  --success-active: #6565E2;
+  --success-active-border: #5454DE;
+}
+
+.btn-primary {
+  /* #0d6efd => lightseagreen (#20b2aa) */
+  /* #0b53d7 => #1c9c96 */
+  /* #0a58ca => #188b85 */
+  /* #0a53be => #157A75 */
+  --bs-btn-bg: var(--primary-bg) !important;
+  --bs-btn-border-color: var(--primary-bg) !important;
+  --bs-btn-hover-bg: var(--primary-hover) !important;
+  --bs-btn-hover-border-color: var(--primary-active) !important;
+  --bs-btn-active-bg: var(--primary-active) !important;
+  --bs-btn-active-border-color: var(--primary-active-border) !important;
+  --bs-btn-disabled-bg: var(--primary-bg) !important;
+  --bs-btn-disabled-border-color: var(--primary-bg) !important;
+}
+
+.btn-success {
+  --bs-btn-bg: var(--success-bg) !important;
+  --bs-btn-border-color: var(--success-bg) !important;
+  --bs-btn-hover-bg: var(--success-hover) !important;
+  --bs-btn-hover-border-color: var(--success-active) !important;
+  --bs-btn-active-bg: var(--success-active) !important;
+  --bs-btn-active-border-color: var(--primary-success-border) !important;
+  --bs-btn-disabled-bg: var(--succes-bg) !important;
+  --bs-btn-disabled-border-color: var(--success-bg) !important;
+}
+
+.form-check-input:checked {
+  background-color: var(--primary-bg) !important;
+  border-color: var(--primary-bg) !important;
+}
+
+.accordion-button:focus {
+  box-shadow: 0 0 0 0.25rem rgba(32, 178, 170, 0.25) !important;
+}
+
+.accordion-button:not(.collapsed) {
+  color: var(--primary-active) !important;
+  background-color: var(--accordion-bg) !important;
+}
+
+.accordion-button:not(.collapsed)::after {
+  background-image: url('data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 16 16%27 fill=%27%23188b85%27><path fill-rule=%27evenodd%27 d=%27M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z%27/></svg>') !important;
+}
+
+.accordion-button::after {
+  background-image: url('data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 16 16%27 fill=%27%23212529%27><path fill-rule=%27evenodd%27 d=%27M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z%27/></svg>') !important;
+}
+
+.progress-bar.bg-success {
+  background-color: var(--success-bg) !important;
+}
+
+.spinner-border:not(.text-light) {
+  border-color: var(--primary-active-border) !important;
+  border-right-color: transparent !important;
 }

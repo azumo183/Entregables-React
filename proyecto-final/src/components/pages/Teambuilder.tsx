@@ -1,7 +1,6 @@
 import React from 'react'
 import { Button, Col, Container, FloatingLabel, Form, Modal, Row } from 'react-bootstrap'
 import { usePokedexContext } from '../../contexts/PokedexContext';
-import CSS from 'csstype';
 import { Pokemon } from '../molecules/Pokemon';
 import { Pokedex } from './Pokedex';
 import { Moves } from '../molecules/Moves';
@@ -10,6 +9,8 @@ import { capFirst, formatedMove } from '../../util';
 import { IPokemon } from '../../models/IPokemon';
 import { IMove } from '../../models/IMove';
 import { useNavigate } from 'react-router-dom';
+import { SpinnerCustom } from '../atoms/SpinnerCustom';
+import { PersonFillAdd } from 'react-bootstrap-icons';
 
 export const Teambuilder = () => {
     const [ errors, setErrors ] = React.useState<string[]>([]);
@@ -34,7 +35,7 @@ export const Teambuilder = () => {
         else handleTeamSave();
     };
 
-    if(loading || loadingTeam) return <p>Loading ...</p>
+    if(loading || loadingTeam) return <SpinnerCustom/>
     if(!team) return <p>Wooops! Something went wrong ...</p>
 
     return (
@@ -42,15 +43,15 @@ export const Teambuilder = () => {
             <h1>Teambuilder</h1>
             <Row>
                 <Col>
-                    <FloatingLabel label='Team Name' style={{marginBottom: '8px'} as CSS.Properties}>
+                    <FloatingLabel label='Team Name' style={{marginBottom: '8px'}}>
                         <Form.Control type="text" value={team.name} onChange={e => setTeam({...team, name: e.target.value})}/>
                     </FloatingLabel>
                 </Col>
             </Row>
             <Row>
                 <Col>
-                    {team.pokemon.length < 6 ? <Button size='sm' style={{float: 'right'} as CSS.Properties} onClick={() => setShowModal('pokedex')}>Add Pokémon</Button> : <></>}
-                    <h6 style={{marginBottom: '20px'} as CSS.Properties}>{`Pokémon: ( ${team.pokemon.length}/6 )`}</h6>
+                    {team.pokemon.length < 6 ? <Button style={{float: 'right'}} onClick={() => setShowModal('pokedex')}><PersonFillAdd/> Add Pokémon</Button> : <></>}
+                    <h6 style={{marginBottom: '26px'}}>{`Pokémon: ( ${team.pokemon.length}/6 )`}</h6>
                 </Col>
             </Row>
             <Row id="partyPokemon">
@@ -59,15 +60,15 @@ export const Teambuilder = () => {
             <Row>
                 <Col className='textAlignRight'>
                     {errors.length > 0? (
-                        <div className='textAlignLeft smallText' style={{float: 'left', color: 'crimson'} as CSS.Properties}>
+                        <div className='textAlignLeft smallText' style={{float: 'left', color: 'crimson'}}>
                             <h6>Attention:</h6>
                             <ul>
                                 {errors.map(error => <li>{error}</li>)}
                             </ul>
                         </div>
                     ): <></>}
-                    <Button size='lg' variant='success' style={{margin: '0px 4px', width: '160px'} as CSS.Properties} onClick={checkTeamBeforeSaving}>Save Changes</Button>
-                    <Button size='lg' variant='outline-secondary' style={{margin: '0px 4px', width: '160px'} as CSS.Properties} onClick={() => navigate('/teambuilder')}>Back</Button>
+                    <Button size='lg' variant='success' style={{margin: '4px 4px 16px 4px', width: '160px'}} onClick={checkTeamBeforeSaving}>Save Changes</Button>
+                    <Button size='lg' variant='outline-secondary' style={{margin: '4px 4px 16px 4px', width: '160px'}} onClick={() => navigate('/teambuilder')}>Back</Button>
                 </Col>
             </Row>
 
@@ -88,18 +89,18 @@ export const Teambuilder = () => {
                     {showModal === 'del_pokemon' ? (
                         <>
                             <p>{`Are you sure you want to remove ${(deletingPokemon as IPokemon).partyPokemon?.nickname ? `'${(deletingPokemon as IPokemon).partyPokemon?.nickname}'` : `that '${capFirst((deletingPokemon as IPokemon).name)}'`}?`}</p>
-                            <div style={{float: 'right'} as CSS.Properties}>
-                                <Button variant='danger' style={{width: '120px', margin:'0px 4px'} as CSS.Properties} onClick={handlePokemonDelete}>Yes</Button>
-                                <Button variant='outline-secondary' style={{width: '120px', margin:'0px 4px'} as CSS.Properties} onClick={() => setShowModal('false')}>No</Button>
+                            <div style={{float: 'right'}}>
+                                <Button variant='danger' style={{width: '120px', margin:'0px 4px'}} onClick={handlePokemonDelete}>Yes</Button>
+                                <Button variant='outline-secondary' style={{width: '120px', margin:'0px 4px'}} onClick={() => setShowModal('false')}>No</Button>
                             </div>
                         </>
                     ) : <></>}
                     {showModal === 'del_move' ? (
                         <>
                             <p>{`Are you sure you want to remove '${formatedMove((deletingMove as IMove).name)}' from ${workingOnPokemon?.partyPokemon?.nickname ? `'${workingOnPokemon.partyPokemon?.nickname}'` : `that '${capFirst(workingOnPokemon?.name)}'`}?`}</p>
-                            <div style={{float: 'right'} as CSS.Properties}>
-                                <Button variant='danger' style={{width: '120px', margin:'0px 4px'} as CSS.Properties} onClick={handleMoveDelete}>Yes</Button>
-                                <Button variant='outline-secondary' style={{width: '120px', margin:'0px 4px'} as CSS.Properties} onClick={() => setShowModal('false')}>No</Button>
+                            <div style={{float: 'right'}}>
+                                <Button variant='danger' style={{width: '120px', margin:'0px 4px'}} onClick={handleMoveDelete}>Yes</Button>
+                                <Button variant='outline-secondary' style={{width: '120px', margin:'0px 4px'}} onClick={() => setShowModal('false')}>No</Button>
                             </div>
                         </>
                     ) : <></>}

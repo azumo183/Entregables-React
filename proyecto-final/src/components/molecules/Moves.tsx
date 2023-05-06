@@ -3,10 +3,9 @@ import { Filter } from './Filter'
 import { Button, Card, Col, Row } from 'react-bootstrap'
 import { TypeTag } from '../atoms/TypeTag'
 import CSS from 'csstype';
-import { formatedMove, FormControlElement } from '../../util';
+import { callApi, formatedMove, FormControlElement } from '../../util';
 import { IMove } from '../../models/IMove';
 import { IPokemon } from '../../models/IPokemon';
-import axios from 'axios';
 import { useTeambuilderContext } from '../../contexts/TeambuilderContext';
 import { Trash3 } from 'react-bootstrap-icons';
 import { ISelectedMove } from '../../models/IParty';
@@ -57,11 +56,7 @@ export const Moves: React.FC<IMovesProps> = ({pokemon, variant}) => {
 
         setLoadingMoves(true);
         try {
-
-            const calls: any[] = [];
-            pokemon.moves.forEach(move => calls.push(axios.get(move.move.url)));
-            const response = await Promise.all(calls);
-
+            const response = await callApi(pokemon.moves.map(move => move.move.url));
             const moves: IMove[] = [];
             response.forEach(element => moves.push(element.data as IMove));
 
@@ -104,12 +99,8 @@ export const Moves: React.FC<IMovesProps> = ({pokemon, variant}) => {
         filterMoves(filter);
     }, [filterMoves, filter]);
 
-    const handleEnter = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === "Enter") setFilter({...filter, search: e.currentTarget.value});
-    };
-
-    const handleBlur = (e: React.FocusEvent<FormControlElement, Element>) => {
-        setFilter({...filter, search: e.currentTarget.value});
+    const handleUpdate = (value: string) => {
+        setFilter({...filter, search: value});
     };
 
     const handleSelect = (e: React.ChangeEvent<HTMLSelectElement>, slot: number) => {
@@ -157,7 +148,7 @@ export const Moves: React.FC<IMovesProps> = ({pokemon, variant}) => {
     return (
         <>
             <Filter
-                input={{label: 'Move Name', handleEnter: handleEnter, handleBlur: handleBlur}}
+                input={{label: 'Move Name', handleUpdate: handleUpdate}}
                 select1={{label: 'Move Type', options: typesAndCats.types, handle: handleSelect}}
                 select2={{label: 'Move Category', options: typesAndCats.categories, handle: handleSelect}}
             />

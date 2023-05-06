@@ -4,9 +4,10 @@ import iconSheet from '../../resources/pokemonicons-sheet.png';
 
 interface IPokemonIconProps {
     pokemonId: number;
+    style?: CSS.Properties;
 }
 
-export const PokemonIcon: React.FC<IPokemonIconProps> = ({pokemonId}) => {
+export const PokemonIcon: React.FC<IPokemonIconProps> = ({pokemonId, style}) => {
 
     const iconPosition = {
         x: (pokemonId % 12) * 40,
@@ -14,6 +15,7 @@ export const PokemonIcon: React.FC<IPokemonIconProps> = ({pokemonId}) => {
     };
 
     const iconStyle: CSS.Properties = {
+        ...style,
         background: `transparent url(${iconSheet}) no-repeat scroll -${iconPosition.x}px -${iconPosition.y}px`,
         display: 'inline-block',
     };

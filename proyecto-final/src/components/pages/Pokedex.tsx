@@ -5,6 +5,7 @@ import { Filter } from '../molecules/Filter';
 import { Col, Row } from 'react-bootstrap';
 import { Pokemon } from '../molecules/Pokemon';
 import { devlog } from '../../util';
+import { SpinnerCustom } from '../atoms/SpinnerCustom';
 
 interface IFilter {
     search: string;
@@ -62,12 +63,8 @@ export const Pokedex: React.FC<IPokedexProps> = ({variant}) => {
         filterPokedex(filter);
     }, [filterPokedex, filter]);
 
-    const handleEnter = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === "Enter") setFilter({...filter, search: e.currentTarget.value});
-    };
-
-    const handleBlur = (e: React.FocusEvent<HTMLInputElement, Element>) => {
-        setFilter({...filter, search: e.currentTarget.value});
+    const handleFilterUpdate = (value: string) => {
+        setFilter({...filter, search: value});
     };
 
     const handleSelect = (e: React.ChangeEvent<HTMLSelectElement>, slot: number) => {
@@ -77,14 +74,14 @@ export const Pokedex: React.FC<IPokedexProps> = ({variant}) => {
         setFilter(newFilter);
     };
 
-    if(loading) return <p>Loading ...</p>
+    if(loading) return <SpinnerCustom/>
 
     return (
         <>
             {variant && variant === 'pick' ? <p className='boldText'>Please select the pokémon you want to add to your team:</p> : <h1>Pokédex</h1>}
 
             <Filter 
-                input={{label: 'Pokémon ID or Name', handleEnter: handleEnter, handleBlur: handleBlur}}
+                input={{label: 'Pokémon ID or Name', handleUpdate: handleFilterUpdate}}
                 select1={{label: 'Type 1', options: types, handle: handleSelect}}
                 select2={{label: 'Type 2', options: types, handle: handleSelect}}
             />

@@ -15,13 +15,16 @@ import { SignupForm } from './components/organisms/SignupForm';
 import { LoginForm } from './components/organisms/LoginForm';
 import { LoggedInAs } from './components/atoms/LoggedInAs';
 import { TeambuilderContextProvider } from './contexts/TeambuilderContext';
-import { BattlePlanner } from './components/organisms/BattlePlanner';
+import { BattleHub } from './components/pages/BattleHub';
 import { Battle } from './components/pages/Battle';
+import { FirebaseUsersContextProvider } from './contexts/FirebaseUsersContext';
+import { AccountForm } from './components/organisms/AccountForm';
+import { ProtectedPage } from './components/layout/ProtectedPage';
 
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <BattlePlanner/>,
+    element: <BattleHub/>,
   },
   {
     path: "/:battleId",
@@ -58,9 +61,19 @@ const router = createBrowserRouter([
   {
     path: "/teambuilder/:teamId",
     element: (
-      <TeambuilderContextProvider>
-        <Teambuilder/>
-      </TeambuilderContextProvider>
+      <ProtectedPage>
+        <TeambuilderContextProvider>
+          <Teambuilder/>
+        </TeambuilderContextProvider>
+      </ProtectedPage>
+    ),
+  },
+  {
+    path: "/account",
+    element: (
+      <ProtectedPage>
+        <AccountForm/>
+      </ProtectedPage>
     ),
   },
 ]);
@@ -87,38 +100,38 @@ function App() {
 
       <FirebaseContextProvider>
         <FirebaseAuthContextProvider>
-          <header>
-            <Navbar bg='dark' variant='dark'>
-              <Container>
-                <Navbar.Brand href="/">Pokémon Showdown Rip-Off ‼</Navbar.Brand>
-                <Navbar.Toggle aria-controls="basic-navbar-nav" />
-                <Navbar.Collapse id="basic-navbar-nav">
-                  <Nav className='me-auto'>
-                    <Nav.Link href="/pokedex">Pokédex</Nav.Link>
-                    <Nav.Link href="/teambuilder">Teambuilder</Nav.Link>
-                  </Nav>
-                </Navbar.Collapse>
-                <Navbar.Collapse className="justify-content-end">
-                  <Navbar.Text>
+          <FirebaseUsersContextProvider>
+            <header>
+              <Navbar bg='dark' variant='dark'>
+                <Container>
+                  <Navbar.Brand href="/">Pokémon Showdown Rip-Off ‼</Navbar.Brand>
+                  <Navbar.Toggle aria-controls="basic-navbar-nav" />
+                  <Navbar.Collapse id="basic-navbar-nav">
+                    <Nav className='me-auto'>
+                      <Nav.Link href="/pokedex">Pokédex</Nav.Link>
+                      <Nav.Link href="/teambuilder">Teambuilder</Nav.Link>
+                    </Nav>
+                  </Navbar.Collapse>
+                  <Navbar.Collapse className="justify-content-end">
                     <LoggedInAs/>
-                  </Navbar.Text>
-                </Navbar.Collapse>
-              </Container>
-            </Navbar>
-          </header>
+                  </Navbar.Collapse>
+                </Container>
+              </Navbar>
+            </header>
 
-          <main>
-            <Container>
-              <PokedexContextProvider>
-                <RouterProvider router={router} />
-              </PokedexContextProvider>
-            </Container>
-          </main>
+            <main>            
+              <Container id='mainContainer'>
+                <PokedexContextProvider>
+                  <RouterProvider router={router} />
+                </PokedexContextProvider>
+              </Container>
+            </main>
+          </FirebaseUsersContextProvider>
         </FirebaseAuthContextProvider>
       </FirebaseContextProvider>
 
       <footer>
-
+        <p className='noMargin'>Developed by : Aarón Zúñiga Morales | 2023</p>
       </footer>
 
     </>

@@ -2,10 +2,10 @@ import React from 'react'
 import { IParty } from '../../models/IParty';
 import { Button, Card, Col, FloatingLabel, Form, Modal, Row } from 'react-bootstrap';
 import { PokemonIcon } from '../atoms/PokemonIcon';
-import { Trash3 } from 'react-bootstrap-icons';
+import { PeopleFill, Trash3 } from 'react-bootstrap-icons';
 import { encode } from '../../util';
 import { useFirebaseAuth } from '../../contexts/FirebaseAuthContext';
-import { deleteTeam, getTeams} from '../../services/firebase';
+import { deleteTeam, getTeams} from '../../services/firebase-teams';
 import { useNavigate } from 'react-router-dom';
 import { User } from "firebase/auth";
 import CSS from 'csstype';
@@ -13,15 +13,16 @@ import CSS from 'csstype';
 interface ITeamListProps {
     variant?: string;
     style?: CSS.Properties;
+    reset?: number;
 
     handleTeamSelect?: (team: IParty | undefined) => void;
 }
 
-export const TeamsList: React.FC<ITeamListProps> = ({variant, style, handleTeamSelect}) => {
+export const TeamsList: React.FC<ITeamListProps> = ({variant, style, handleTeamSelect, reset}) => {
     const [ deletingTeam, setDeletingTeam ] = React.useState<IParty>();
     const [ showModal, setShowModal ] = React.useState(false);
     const [ teams, setTeams ] = React.useState<IParty[]>([]);
-    const [ selectedTeam, setSelectedTeam ] = React.useState<IParty | undefined>();
+    const [ selectedTeamValue, setSelectedTeamValue ] = React.useState(-1);
 
     const { authUser } = useFirebaseAuth();
     const navigate = useNavigate();
@@ -39,6 +40,10 @@ export const TeamsList: React.FC<ITeamListProps> = ({variant, style, handleTeamS
     }, [authUser]);
 
     React.useEffect(() => {
+        if(reset === 2) setSelectedTeamValue(-1);
+    }, [reset]);
+
+    React.useEffect(() => {
         loadTeams();
     }, [loadTeams]);
 
@@ -47,19 +52,14 @@ export const TeamsList: React.FC<ITeamListProps> = ({variant, style, handleTeamS
         setShowModal(true);
     };
 
-    const handleDeleteTeamCofirmation = () => {
-        deleteTeam(deletingTeam as IParty, authUser as User);
+    const handleDeleteTeamCofirmation = async () => {
+        const res = await deleteTeam(deletingTeam as IParty, authUser as User);
+        if(res) setTeams(res);
         setShowModal(false);
     };
 
     const localHandleTeamSelect = (teamIndex: number) => {
-        if(teamIndex === -1) {
-            setSelectedTeam(undefined); //Random
-            if(handleTeamSelect) handleTeamSelect(undefined);
-            return;
-        }
-
-        setSelectedTeam(teams[teamIndex]);
+        setSelectedTeamValue(teamIndex);
         if(handleTeamSelect) handleTeamSelect(teams[teamIndex]);
     };
 
@@ -70,7 +70,7 @@ export const TeamsList: React.FC<ITeamListProps> = ({variant, style, handleTeamS
                 <Card.Body>
 
                     <FloatingLabel label='Team'>
-                        <Form.Select onChange={(e) => localHandleTeamSelect(Number.parseInt(e.target.value))}>
+                        <Form.Select id='teamSelect' onChange={(e) => localHandleTeamSelect(Number.parseInt(e.target.value))} value={selectedTeamValue}>
                             <option value={-1}>- Random -</option>
                             {teams.map((team, index) => <option key={team.id} value={index}>{team.name}</option>)}
                         </Form.Select>
@@ -79,8 +79,8 @@ export const TeamsList: React.FC<ITeamListProps> = ({variant, style, handleTeamS
                     <p style={{marginTop: '10px'}}>Team Summary:</p>
                     <p className='textAlignCenter'>
                         {
-                            selectedTeam ? 
-                            selectedTeam.pokemon.map((pokemon, index) => <PokemonIcon key={index} pokemonId={pokemon.pokemonId}/>) : 
+                            selectedTeamValue > -1 ? 
+                            teams[selectedTeamValue].pokemon.map((pokemon, index) => <PokemonIcon key={index} pokemonId={pokemon.pokemonId}/>) : 
                             <>
                                 <PokemonIcon pokemonId={0}/>
                                 <PokemonIcon pokemonId={0}/>
@@ -102,7 +102,7 @@ export const TeamsList: React.FC<ITeamListProps> = ({variant, style, handleTeamS
             <h1>Teambuilder</h1>
             <Row>
                 <Col>
-                    <Button style={{float: 'right'}} onClick={() => navigate(`/teambuilder/${encode(`temp-${authUser?.uid}-${Date.now()}`)}`)}>Create New Team</Button>
+                    <Button style={{float: 'right'}} onClick={() => navigate(`/teambuilder/${encode(`temp-${authUser?.uid}-${Date.now()}`)}`)}><PeopleFill/> Create New Team</Button>
                     <h6 style={{marginBottom: '32px'}}>{`Teams: (${teams.length})`}</h6>
                 </Col>
             </Row>
@@ -110,7 +110,7 @@ export const TeamsList: React.FC<ITeamListProps> = ({variant, style, handleTeamS
             <Row>
                 {teams.map((team, index) =>
                     <Col key={team.id} xs={4} style={{position: 'relative'}}>
-                        <Button variant='link' style={{position: 'absolute', color: 'crimson', zIndex: 1, right: '20px'}} onClick={() => handleDeleteTeam(team)}><Trash3/></Button>
+                        <Button variant='link' style={{position: 'absolute', color: 'white', zIndex: 1, right: '20px'}} onClick={() => handleDeleteTeam(team)}><Trash3/></Button>
                         <a href={`/teambuilder/${team.id}`} style={{color: 'black', textDecoration: 'none'}}> 
                             <Card className='sm-card'>
                                 <Card.Header>
