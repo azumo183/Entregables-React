@@ -12,6 +12,7 @@ import { TypeTag } from '../atoms/TypeTag';
 import { Moves } from './Moves';
 import { useTeambuilderContext } from '../../contexts/TeambuilderContext';
 import { useNavigate } from 'react-router-dom';
+import { Move } from '../atoms/Move';
 
 interface IPokemonProps {
     pokemon: IPokemon;
@@ -20,7 +21,7 @@ interface IPokemonProps {
 
 export const Pokemon: React.FC<IPokemonProps> = ({pokemon, variant}) => {
     const { pokedex } = usePokedexContext();
-    const { handleAddPokemonToTeam, setShowModal, setDeletingPokemon, handleNicknameChange, setWorkingOnPokemon } = useTeambuilderContext();
+    const { setShowModal, setSelectedPokemon, handleAddPokemon, handleNicknameChange } = useTeambuilderContext();
     const navigate = useNavigate();
 
     const [ nickname, setNickname ] = React.useState<string>(pokemon.partyPokemon?.nickname? pokemon.partyPokemon.nickname : capFirst(pokemon.name));
@@ -34,17 +35,17 @@ export const Pokemon: React.FC<IPokemonProps> = ({pokemon, variant}) => {
     };
 
     const handlePokemonDelete = () => {
-        setDeletingPokemon(pokemon);
+        setSelectedPokemon(pokemon);
         setShowModal('del_pokemon');
     };
 
     const handleAddMove = () => {
-        setWorkingOnPokemon(pokemon);
+        setSelectedPokemon(pokemon);
         setShowModal('moves');
     };
 
     const handlePokemonClicked = () => {
-        if(handleAddPokemonToTeam.toString() !== '() => {}') handleAddPokemonToTeam(pokemon);
+        if(handleAddPokemon.toString() !== '() => {}') handleAddPokemon(pokemon);
         else navigate(`/pokedex/${pokemon.id}`);
     };
     
@@ -94,7 +95,13 @@ export const Pokemon: React.FC<IPokemonProps> = ({pokemon, variant}) => {
                 </Row>
                 <Row style={{padding: '0px 12px'}}>
                     <Col>
-                        <Moves pokemon={pokemon} variant='party'/>
+                        <Row className='partyPokemonMoves'>
+                            {pokemon.partyPokemon.selectedMoves.map((selectedMove, index) =>
+                                <Col key={index} xs={6} style={{padding: '4px 12px'}}>
+                                    <Move pokemon={pokemon} moveId={selectedMove.moveId}/>
+                                </Col>
+                            )}
+                        </Row>
                     </Col>
                 </Row>
             </Card.Body>

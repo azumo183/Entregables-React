@@ -10,13 +10,13 @@ import { IPokemon } from '../../models/IPokemon';
 import { IMove } from '../../models/IMove';
 import { useNavigate } from 'react-router-dom';
 import { SpinnerCustom } from '../atoms/SpinnerCustom';
-import { PersonFillAdd } from 'react-bootstrap-icons';
+import { ArrowReturnLeft, PersonFillAdd } from 'react-bootstrap-icons';
 
 export const Teambuilder = () => {
     const [ errors, setErrors ] = React.useState<string[]>([]);
 
     const { pokedex, loading } = usePokedexContext();
-    const { team, setTeam, loadingTeam, showModal, setShowModal, deletingPokemon, handlePokemonDelete, workingOnPokemon, handleMoveDelete, deletingMove, handleTeamSave } = useTeambuilderContext();
+    const { team, loadingTeam, showModal, selectedPokemon, selectedMove, setTeam, setShowModal, handleDeletePokemon, handleDeleteMove, handleTeamSave } = useTeambuilderContext();
     const navigate = useNavigate();
 
     const checkTeamBeforeSaving = () => {
@@ -54,9 +54,11 @@ export const Teambuilder = () => {
                     <h6 style={{marginBottom: '26px'}}>{`Pokémon: ( ${team.pokemon.length}/6 )`}</h6>
                 </Col>
             </Row>
-            <Row id="partyPokemon">
-                {team.pokemon.map((pokemon, index) => <Col key={index} xs={6}><Pokemon variant='party' pokemon={{...pokedex[pokemon.pokemonId-1], partyPokemon: pokemon}}/></Col> )}
-            </Row>
+            <div style={{minHeight: 'calc(100vh - 335px)'}}>
+                <Row id="partyPokemon">
+                    {team.pokemon.map((pokemon, index) => <Col key={index} xs={6}><Pokemon variant='party' pokemon={{...pokedex[pokemon.pokemonId-1], partyPokemon: pokemon}}/></Col> )}
+                </Row>
+            </div>
             <Row>
                 <Col className='textAlignRight'>
                     {errors.length > 0? (
@@ -81,25 +83,25 @@ export const Teambuilder = () => {
                 fullscreen={showModal.startsWith('del_') ? undefined : true}
             >
                 <Modal.Header closeButton>
-                    {!showModal.startsWith('del_') ? <Button variant='link' onClick={() => setShowModal('false')}>Back to Team</Button> : <></>}
+                    {!showModal.startsWith('del_') ? <Button variant='link' onClick={() => setShowModal('false')} style={{textDecoration: 'none'}}><ArrowReturnLeft/> Back to Team</Button> : <></>}
                 </Modal.Header>
                 <Modal.Body>
                     {showModal === 'pokedex' ? <Container><Pokedex variant='pick'/></Container> : <></>}
-                    {showModal === 'moves' ? <Container><Moves pokemon={workingOnPokemon as IPokemon}/></Container> : <></>}
+                    {showModal === 'moves' ? <Container><Moves pokemon={selectedPokemon as IPokemon}/></Container> : <></>}
                     {showModal === 'del_pokemon' ? (
                         <>
-                            <p>{`Are you sure you want to remove ${(deletingPokemon as IPokemon).partyPokemon?.nickname ? `'${(deletingPokemon as IPokemon).partyPokemon?.nickname}'` : `that '${capFirst((deletingPokemon as IPokemon).name)}'`}?`}</p>
+                            <p>{`Are you sure you want to remove ${(selectedPokemon as IPokemon).partyPokemon?.nickname ? `'${(selectedPokemon as IPokemon).partyPokemon?.nickname}'` : `that '${capFirst((selectedPokemon as IPokemon).name)}'`}?`}</p>
                             <div style={{float: 'right'}}>
-                                <Button variant='danger' style={{width: '120px', margin:'0px 4px'}} onClick={handlePokemonDelete}>Yes</Button>
+                                <Button variant='danger' style={{width: '120px', margin:'0px 4px'}} onClick={handleDeletePokemon}>Yes</Button>
                                 <Button variant='outline-secondary' style={{width: '120px', margin:'0px 4px'}} onClick={() => setShowModal('false')}>No</Button>
                             </div>
                         </>
                     ) : <></>}
                     {showModal === 'del_move' ? (
                         <>
-                            <p>{`Are you sure you want to remove '${formatedMove((deletingMove as IMove).name)}' from ${workingOnPokemon?.partyPokemon?.nickname ? `'${workingOnPokemon.partyPokemon?.nickname}'` : `that '${capFirst(workingOnPokemon?.name)}'`}?`}</p>
+                            <p>{`Are you sure you want to remove '${formatedMove((selectedMove as IMove).name)}' from ${selectedPokemon?.partyPokemon?.nickname ? `'${selectedPokemon.partyPokemon?.nickname}'` : `that '${capFirst(selectedPokemon?.name)}'`}?`}</p>
                             <div style={{float: 'right'}}>
-                                <Button variant='danger' style={{width: '120px', margin:'0px 4px'}} onClick={handleMoveDelete}>Yes</Button>
+                                <Button variant='danger' style={{width: '120px', margin:'0px 4px'}} onClick={handleDeleteMove}>Yes</Button>
                                 <Button variant='outline-secondary' style={{width: '120px', margin:'0px 4px'}} onClick={() => setShowModal('false')}>No</Button>
                             </div>
                         </>

@@ -10,6 +10,8 @@ interface PokedexContextProps {
     setLoading: React.Dispatch<React.SetStateAction<boolean>>;
 
     getBaseStat: (pokemonId: number, statName: string) => number;
+    getFrontSprite: (pokemonId: number) => string;
+    getBackSprite: (pokemonId: number) => string;
 }
 
 const PokedexContext = React.createContext<PokedexContextProps>({
@@ -20,6 +22,8 @@ const PokedexContext = React.createContext<PokedexContextProps>({
     setLoading: () => {},
 
     getBaseStat: () => -1,
+    getFrontSprite: () => '',
+    getBackSprite: () => '',
 });
 
 export const PokedexContextProvider: React.FC<React.PropsWithChildren> = ({children}) => {
@@ -49,6 +53,16 @@ export const PokedexContextProvider: React.FC<React.PropsWithChildren> = ({child
         return baseStat? baseStat : 0;
     }, [pokedex]);
 
+    const getFrontSprite = React.useCallback((pokemonId: number) => {
+        const url = pokedex[pokemonId-1].sprites.versions['generation-v']['black-white'].animated.front_default;
+        return url ? url : '';
+    }, [pokedex]);
+
+    const getBackSprite = React.useCallback((pokemonId: number) => {
+        const url = pokedex[pokemonId-1].sprites.versions['generation-v']['black-white'].animated.back_default;
+        return url ? url : '';
+    }, [pokedex]);
+
     React.useEffect(() => {
         callPokeApi();
     }, [callPokeApi]);
@@ -60,6 +74,8 @@ export const PokedexContextProvider: React.FC<React.PropsWithChildren> = ({child
             setPokedex,
             setLoading,
             getBaseStat,
+            getFrontSprite,
+            getBackSprite
         }), 
         [
             pokedex, 
@@ -67,6 +83,8 @@ export const PokedexContextProvider: React.FC<React.PropsWithChildren> = ({child
             setPokedex,
             setLoading,
             getBaseStat,
+            getFrontSprite,
+            getBackSprite,
         ]
     );
 

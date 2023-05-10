@@ -1,5 +1,5 @@
 import React from 'react';
-//import logo from './logo.svg';
+import logo from './logo.svg';
 import './App.css';
 import { RouterProvider, createBrowserRouter } from 'react-router-dom';
 import { Pokedex } from './components/pages/Pokedex';
@@ -20,14 +20,24 @@ import { Battle } from './components/pages/Battle';
 import { FirebaseUsersContextProvider } from './contexts/FirebaseUsersContext';
 import { AccountForm } from './components/organisms/AccountForm';
 import { ProtectedPage } from './components/layout/ProtectedPage';
+import { Home } from './components/pages/Home';
+import { AiBattleSetup } from './components/pages/AiBattleSetup';
 
 const router = createBrowserRouter([
   {
     path: "/",
+    element: <Home/>,
+  },
+  {
+    path: "/ai-battle",
+    element: <AiBattleSetup/>,
+  },
+  {
+    path: "/battle",
     element: <BattleHub/>,
   },
   {
-    path: "/:battleId",
+    path: "/battle/:battleId",
     element: <Battle/>,
   },
   {
@@ -81,33 +91,18 @@ const router = createBrowserRouter([
 function App() {
   return (
     <>
-      {/*<div className="App">
-        <header className="App-header">
-          <img src={logo} className="App-logo" alt="logo" />
-          <p>
-            Edit <code>src/App.tsx</code> and save to reload.
-          </p>
-          <a
-            className="App-link"
-            href="https://reactjs.org"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Learn React
-          </a>
-        </header>
-      </div>*/}
-
       <FirebaseContextProvider>
         <FirebaseAuthContextProvider>
           <FirebaseUsersContextProvider>
             <header>
               <Navbar bg='dark' variant='dark'>
                 <Container>
-                  <Navbar.Brand href="/">Pokémon Showdown Rip-Off ‼</Navbar.Brand>
+                  <Navbar.Brand href="/"><img src={logo} className="App-logo" alt="logo" /> Pokémon Showdown Rip-Off ‼</Navbar.Brand>
                   <Navbar.Toggle aria-controls="basic-navbar-nav" />
                   <Navbar.Collapse id="basic-navbar-nav">
                     <Nav className='me-auto'>
+                      <Nav.Link href="/ai-battle">AI Battle</Nav.Link>
+                      <Nav.Link href="/battle">Battle Hub</Nav.Link>
                       <Nav.Link href="/pokedex">Pokédex</Nav.Link>
                       <Nav.Link href="/teambuilder">Teambuilder</Nav.Link>
                     </Nav>

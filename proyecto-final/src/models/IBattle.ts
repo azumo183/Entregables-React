@@ -22,13 +22,16 @@ export interface IPlayer {
 
 export interface IAction {
     type: number;   // 0 - attack   | 1 - switch | 2 - give up | 3 - faint | 4 - out of pokemon | 5 - end
-    option: number; // attack slot  | party slot | meh
+    option: number; // attack slot  | party slot | undefined
     speed: number;  // attack speed | max
-    data?: {
-        moveName: string;
-        movePower: number; 
-    };
+    data?: IActionData;
     owner: string;
     message?: string;
     resolved?: boolean;
+}
+
+export interface IActionData {
+    moveName: string;
+    movePower: number;
+    p2GoesFirst: boolean;
 }

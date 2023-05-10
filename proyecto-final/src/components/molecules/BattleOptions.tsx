@@ -63,7 +63,7 @@ export const BattleOptions: React.FC<IBattleOptions> = ({battle}) => {
     }
 
     const goToBattle = () => {
-        navigate(`/${battle.id}`);
+        navigate(`/battle/${battle.id}`);
     };
 
     return(

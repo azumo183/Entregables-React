@@ -16,6 +16,8 @@ export const FirebaseUsersContextProvider: React.FC<PropsWithChildren> = ({child
     const [ users, setUsers ] = React.useState<IUserWrapper[]>([]);
 
     const getUserDisplayName = React.useCallback((userId: string) => {
+        if(userId === '-bot-') return 'Malevolent AI';
+        else if(userId === 'guest') return 'Mysterious Pokémon Trainer';
         return users.find(user => user.id === userId)?.data.displayName;
     }, [users]);
 

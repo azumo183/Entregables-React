@@ -11,21 +11,19 @@ export interface TeambuilderContextProps {
     team: IParty | undefined;
     loadingTeam: boolean;
     showModal: string;
-    deletingPokemon: IPokemon | undefined;
-    workingOnPokemon: IPokemon | undefined;
-    deletingMove: IMove | undefined;
+    selectedPokemon: IPokemon | undefined;
+    selectedMove: IMove | undefined;
 
     setTeam: React.Dispatch<React.SetStateAction<IParty | undefined>>;
     setLoadingTeam: React.Dispatch<React.SetStateAction<boolean>>;
     setShowModal: React.Dispatch<React.SetStateAction<string>>;
-    setDeletingPokemon: React.Dispatch<React.SetStateAction<IPokemon | undefined>>;
-    setWorkingOnPokemon: React.Dispatch<React.SetStateAction<IPokemon | undefined>>;
-    setDeletingMove: React.Dispatch<React.SetStateAction<IMove | undefined>>;
+    setSelectedPokemon: React.Dispatch<React.SetStateAction<IPokemon | undefined>>;
+    setSelectedMove: React.Dispatch<React.SetStateAction<IMove | undefined>>;
 
-    handleAddPokemonToTeam: (pokemon: IPokemon) => void;
-    handleMovePick: (move: IMove) => void;
-    handlePokemonDelete: () => void;
-    handleMoveDelete: () => void;
+    handleAddPokemon: (pokemon: IPokemon) => void;
+    handleDeletePokemon: () => void;
+    handleAddMove: (move: IMove) => void;
+    handleDeleteMove: () => void;
     handleNicknameChange: (pokemon: IPokemon, newNickname: string) => void;
     handleTeamSave: () => void;
 }
@@ -34,21 +32,19 @@ const TeambuilderContext = React.createContext<TeambuilderContextProps>({
     team: undefined,
     loadingTeam: true,
     showModal: 'false',
-    deletingPokemon: undefined,
-    workingOnPokemon: undefined,
-    deletingMove: undefined,
+    selectedPokemon: undefined,
+    selectedMove: undefined,
 
     setTeam: () => {},
     setLoadingTeam: () => {},
     setShowModal: () => {},
-    setDeletingPokemon: () => {},
-    setWorkingOnPokemon: () => {},
-    setDeletingMove: () => {},
+    setSelectedPokemon: () => {},
+    setSelectedMove: () => {},
 
-    handleAddPokemonToTeam: () => {},
-    handleMovePick: () => {},
-    handlePokemonDelete: () => {},
-    handleMoveDelete: () => {},
+    handleAddPokemon: () => {},
+    handleDeletePokemon: () => {},
+    handleAddMove: () => {},
+    handleDeleteMove: () => {},
     handleNicknameChange: () => {},
     handleTeamSave: () => {},
 });
@@ -57,9 +53,8 @@ export const TeambuilderContextProvider: React.FC<React.PropsWithChildren> = ({c
     const [ team, setTeam ] = React.useState<IParty>();
     const [ loadingTeam, setLoadingTeam ] = React.useState(true);
     const [ showModal, setShowModal ] = React.useState<string>('false'); // 'false', 'pokedex', 'moves', 'del_pokemon', 'del_move'
-    const [ deletingPokemon, setDeletingPokemon ] = React.useState<IPokemon>();
-    const [ workingOnPokemon, setWorkingOnPokemon ] = React.useState<IPokemon>();
-    const [ deletingMove, setDeletingMove ] = React.useState<IMove>();
+    const [ selectedPokemon, setSelectedPokemon ] = React.useState<IPokemon>();
+    const [ selectedMove, setSelectedMove ] = React.useState<IMove>();
 
     const { authUser } = useFirebaseAuth();
     const { teamId } = useParams();
@@ -92,10 +87,8 @@ export const TeambuilderContextProvider: React.FC<React.PropsWithChildren> = ({c
         }
     }, [authUser, teamId]);
 
-    const handleAddPokemonToTeam = React.useCallback((pokemon: IPokemon) => {
-        console.log(`handleAddPokemonToTeam`);
-        if(!team) return;
-        const newTeam = team;
+    const handleAddPokemon = React.useCallback((pokemon: IPokemon) => {
+        console.log(`handleAddPokemon`);
 
         const hp = pokemon.stats.find(stat => stat.stat.name === 'hp');
         
@@ -106,61 +99,54 @@ export const TeambuilderContextProvider: React.FC<React.PropsWithChildren> = ({c
             selectedMoves: [],
         };
 
-        newTeam.pokemon.push(pokemon.partyPokemon);
+        team?.pokemon.push(pokemon.partyPokemon);
 
-        setTeam(newTeam);
+        setTeam(team);
         setShowModal('false');
     }, [team]);
 
-    const handleMovePick = React.useCallback((move: IMove) => {
-        console.log(`handleMovePick`);
-        if(!team || !workingOnPokemon) return;
-        const newTeam = team;
+    const handleDeletePokemon = React.useCallback(() => {
+        console.log(`handleDeletePokemon`);
+        if(!selectedPokemon) return;
 
+        team?.pokemon.splice(team.pokemon.indexOf(selectedPokemon?.partyPokemon as IPartyPokemon), 1);
+        //console.log(team?.pokemon);
+
+        setTeam(team);
+        setShowModal('false');
+    }, [team, selectedPokemon]);
+
+    const handleAddMove = React.useCallback((move: IMove) => {
+        console.log(`handleAddMove`);
+        
         move.partyPokemonMove = {
             moveId: move.id,
             currentPP: move.pp,
         };
 
-        newTeam.pokemon[newTeam.pokemon.indexOf(workingOnPokemon.partyPokemon as IPartyPokemon)].selectedMoves.push(move.partyPokemonMove);
+        team?.pokemon[team.pokemon.indexOf(selectedPokemon?.partyPokemon as IPartyPokemon)].selectedMoves.push(move.partyPokemonMove);
 
-        setTeam(newTeam);
+        setTeam(team);
         setShowModal('false');
-    }, [team, workingOnPokemon]);
+    }, [team, selectedPokemon]);
 
-    const handlePokemonDelete = React.useCallback(() => {
-        console.log(`handlePokemonDelete`);
-        if(!team || !deletingPokemon) return;
-        const newTeam = team;
-
-        newTeam.pokemon.splice(newTeam.pokemon.indexOf((deletingPokemon as IPokemon).partyPokemon as IPartyPokemon), 1);
-        //console.log(newTeam);
-
-        setTeam(newTeam);
-        setShowModal('false');
-    }, [team, deletingPokemon]);
-
-    const handleMoveDelete = React.useCallback(() => {
-        console.log(`handleMoveDelete`);
-        if(!team || !deletingMove) return;
-        const newTeam = team;
+    const handleDeleteMove = React.useCallback(() => {
+        console.log(`handleDeleteMove`);
         
-        const pokemon = newTeam.pokemon[newTeam.pokemon.indexOf((workingOnPokemon as IPokemon).partyPokemon as IPartyPokemon)];
-        pokemon.selectedMoves.splice(pokemon.selectedMoves.indexOf(((deletingMove as IMove).partyPokemonMove as ISelectedMove)), 1);
-        //console.log(pokemon.selectedMoves);
+        const pokemon = team?.pokemon[team.pokemon.indexOf(selectedPokemon?.partyPokemon as IPartyPokemon)];
+        pokemon?.selectedMoves.splice(pokemon.selectedMoves.indexOf(pokemon.selectedMoves.find(move => move.moveId === selectedMove?.id) as ISelectedMove), 1);
+        //console.log(pokemon?.selectedMoves);
 
-        setTeam(newTeam);
+        setTeam(team);
         setShowModal('false');
-    }, [team, deletingMove, workingOnPokemon]);
+    }, [team, selectedPokemon, selectedMove]);
 
     const handleNicknameChange = React.useCallback((pokemon: IPokemon, newNickname: string) => {
         console.log(`handleNicknameChange`);
-        if(!team) return;
-        const newTeam = team;
-        //const pre = newTeam.pokemon[newTeam.pokemon.indexOf(pokemon.partyPokemon as IPartyPokemon)].nickname;
-        newTeam.pokemon[newTeam.pokemon.indexOf(pokemon.partyPokemon as IPartyPokemon)].nickname = newNickname;
-        //console.log(`${pre} => ${newTeam.pokemon[newTeam.pokemon.indexOf(pokemon.partyPokemon as IPartyPokemon)].nickname}`);
-        setTeam(newTeam);
+        //const pre = team?.pokemon[team.pokemon.indexOf(pokemon.partyPokemon as IPartyPokemon)].nickname;
+        (team?.pokemon[team?.pokemon.indexOf(pokemon.partyPokemon as IPartyPokemon)] as IPartyPokemon).nickname = newNickname;
+        //console.log(`${pre} => ${team?.pokemon[team.pokemon.indexOf(pokemon.partyPokemon as IPartyPokemon)]?.nickname}`);
+        setTeam(team);
     }, [team]);
 
     const handleTeamSave = React.useCallback(async () => {
@@ -183,21 +169,19 @@ export const TeambuilderContextProvider: React.FC<React.PropsWithChildren> = ({c
             team, 
             loadingTeam,
             showModal,
-            deletingPokemon,
-            workingOnPokemon,
-            deletingMove,
+            selectedPokemon,
+            selectedMove,
 
             setTeam,
             setLoadingTeam,
             setShowModal,
-            setDeletingPokemon,
-            setWorkingOnPokemon,
-            setDeletingMove,
+            setSelectedPokemon,
+            setSelectedMove,
 
-            handleAddPokemonToTeam,
-            handleMovePick,
-            handlePokemonDelete,
-            handleMoveDelete,
+            handleAddPokemon,
+            handleDeletePokemon,
+            handleAddMove,
+            handleDeleteMove,
             handleNicknameChange,
             handleTeamSave,
         }), 
@@ -205,21 +189,19 @@ export const TeambuilderContextProvider: React.FC<React.PropsWithChildren> = ({c
             team, 
             loadingTeam,
             showModal,
-            deletingPokemon,
-            workingOnPokemon, 
-            deletingMove,
+            selectedPokemon,
+            selectedMove,
 
             setTeam,
             setLoadingTeam,
             setShowModal,
-            setDeletingPokemon,
-            setWorkingOnPokemon,
-            setDeletingMove, 
+            setSelectedPokemon,
+            setSelectedMove, 
 
-            handleAddPokemonToTeam,
-            handleMovePick,
-            handlePokemonDelete,
-            handleMoveDelete,
+            handleAddPokemon,
+            handleDeletePokemon,
+            handleAddMove,
+            handleDeleteMove,
             handleNicknameChange,
             handleTeamSave,
         ]

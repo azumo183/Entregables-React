@@ -41,14 +41,13 @@ export const getBattle = async (firebaseUser: User, battleId: string) => {
     return querySnapshot.docs.length > 0 ? querySnapshot.docs[0].data() as IBattle : undefined;
 };
 
-export const getBattleLive = async (battleId: string, battleRef: React.MutableRefObject<IBattle | undefined>, setLoading: React.Dispatch<React.SetStateAction<boolean>>, setActions: React.Dispatch<React.SetStateAction<IAction[]>>) => {
+export const getBattleLive = async (battleId: string, setBattle: React.Dispatch<React.SetStateAction<IBattle | undefined>>, setLoading: React.Dispatch<React.SetStateAction<boolean>>) => {
     onSnapshot((await getDoc(doc(battlesRef(), battleId))).ref, snapshot => {
         setLoading(true);
         console.log(`firebase-battles: changes detected, updating battle ...`);
         const battle: IBattle = snapshot.data() as IBattle;
-        battleRef.current = battle;
+        setBattle(battle);
         setLoading(false);
-        setActions([battle.player1.action as IAction, (battle.player2 as IPlayer).action as IAction]);
     }, err => {
         console.error(err);
     });
@@ -126,7 +125,7 @@ export const checkBothPlayersReady = async (battle: IBattle) => {
             const docRef = await t.get(battleRef);
             const p1Status = docRef.data()?.player1.status;
             const p2Status = docRef.data()?.player2.status;
-            if (p1Status === 2 && p2Status === 2) t.update(battleRef, { status: 2 });
+            if (p1Status === 2 && p2Status === 2) t.update(battleRef, {...battle, status: 2, player1: {...battle.player1, status: 0}, player2: {...battle.player2 as IPlayer, status: 0} });
             else throw Object.assign(new Error('Players are not ready yet'));
         });
         console.log(`Both players ready!`);

@@ -1,18 +1,15 @@
 import React from 'react'
 import { Filter } from './Filter'
-import { Button, Card, Col, Row } from 'react-bootstrap'
+import { Card, Col, Row } from 'react-bootstrap'
 import { TypeTag } from '../atoms/TypeTag'
-import CSS from 'csstype';
-import { callApi, formatedMove, FormControlElement } from '../../util';
+import { callApi, formatedMove } from '../../util';
 import { IMove } from '../../models/IMove';
 import { IPokemon } from '../../models/IPokemon';
 import { useTeambuilderContext } from '../../contexts/TeambuilderContext';
-import { Trash3 } from 'react-bootstrap-icons';
-import { ISelectedMove } from '../../models/IParty';
+import { SpinnerCustom } from '../atoms/SpinnerCustom';
 
 interface IMovesProps {
     pokemon: IPokemon;
-    variant?: string;
 }
 
 interface IFilter {
@@ -26,12 +23,12 @@ interface IMoveTypes {
     categories: string[];
 }
 
-export const Moves: React.FC<IMovesProps> = ({pokemon, variant}) => {
+export const Moves: React.FC<IMovesProps> = ({pokemon}) => {
     const [ loadingMoves, setLoadingMoves ] = React.useState<boolean>(true);
     const [ filteredMoves, setFilteredMoves ] = React.useState<IMove[]>([]);
     const [ filter, setFilter ] = React.useState<IFilter>({search: "", type: 0, category: 0});
 
-    const { handleMovePick, setDeletingMove, setShowModal, setWorkingOnPokemon } = useTeambuilderContext();
+    const {handleAddMove } = useTeambuilderContext();
 
     const typesAndCats: IMoveTypes = React.useMemo(() => {
         if(!pokemon.movesDetailed)  return {types: [], categories: []};
@@ -110,41 +107,6 @@ export const Moves: React.FC<IMovesProps> = ({pokemon, variant}) => {
         setFilter(newFilter);
     };
 
-    const handleMoveDelete = (move: IMove) => {
-        setWorkingOnPokemon(pokemon);
-        setDeletingMove(move);
-        setShowModal('del_move');
-    };
-
-    const loadMoveContent = (selectedMove: ISelectedMove) => {
-        const move: IMove = {...pokemon.movesDetailed?.find(move => move.id === selectedMove.moveId) as IMove, partyPokemonMove: selectedMove};
-        if(!move.name) return <p>Loading ...</p>
-        return (
-            <>
-                <Button variant='link' style={{color: 'gray', float: 'right'} as CSS.Properties} onClick={() => handleMoveDelete(move)}><Trash3/></Button>
-                <span>{formatedMove(move.name)}</span>
-                <span>
-                    <TypeTag typeName={move.type.name}/>
-                    <TypeTag typeName={move.damage_class.name} variant='category'/>
-                </span>
-                <br/>
-                <span>{`Pow: ${move.power? move.power: '-'}`}</span>
-                <span>{`Acc: ${move.accuracy? move.accuracy: '-'}`}</span>
-                <span>{`PP: ${move.pp}`}</span>
-            </>
-        )
-    };
-
-    if(variant && variant === 'party' && pokemon.partyPokemon) return (
-        <Row className='partyPokemonMoves'>
-            {pokemon.partyPokemon.selectedMoves.map((selectedMove, index) =>
-                <Col key={index} xs={6} style={{padding: '4px 12px'} as CSS.Properties}>
-                    {loadMoveContent(selectedMove)}
-                </Col>
-            )}
-        </Row>
-    )
-
     return (
         <>
             <Filter
@@ -158,10 +120,10 @@ export const Moves: React.FC<IMovesProps> = ({pokemon, variant}) => {
                     <Card className='sm-card'>
                         <Card.Header>Moves:</Card.Header>
                         <Card.Body className='moveList'>
-                            {loadingMoves? <p>Loading ...</p> : (
+                            {loadingMoves? <SpinnerCustom/> : (
                                 filteredMoves.length > 0?
                                 <>
-                                    <Row style={{fontWeight: 'bold', marginBottom: '8px'} as CSS.Properties}>
+                                    <Row style={{fontWeight: 'bold', marginBottom: '8px'}}>
                                         <Col>Name ↑</Col>
                                         <Col xs={6} className='textAlignLeft'>Description</Col>
                                         <Col>Type</Col>
@@ -170,7 +132,7 @@ export const Moves: React.FC<IMovesProps> = ({pokemon, variant}) => {
                                         <Col>PP</Col>
                                     </Row>
                                     {filteredMoves.map(move => (
-                                        <button key={move.id} className='link smallText' onClick={() => handleMovePick(move)}>
+                                        <button key={move.id} className='link smallText' onClick={() => handleAddMove(move)}>
                                             <Row>
                                                 <Col>{`${formatedMove(move.name)}`}</Col>
                                                 <Col xs={6} className='textAlignLeft'>

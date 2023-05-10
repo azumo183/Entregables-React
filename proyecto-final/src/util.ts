@@ -51,10 +51,10 @@ export const status = [
     [''],
 ];
 
-export const createRandomTeam = async (authUser: User, pokedex: IPokemon[]) => {
+export const createRandomTeam = async (authUser: User | string, pokedex: IPokemon[]) => {
     const party: IParty = {
-        id: encode(`rand-${authUser.uid}-${Date.now()}`),
-        owner: authUser.uid,
+        id: encode(`rand-${(authUser as User).uid ? (authUser as User).uid : authUser}-${Date.now()}`),
+        owner: (authUser as User).uid ? (authUser as User).uid : authUser as string,
         name: 'Random Team OP ‼',
         pokemon: [],
         date: Date.now(),
